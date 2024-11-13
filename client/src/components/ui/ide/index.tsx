@@ -3,6 +3,8 @@ import CodeMirror, { Extension } from "@uiw/react-codemirror";
 import React, { useMemo } from "react";
 import typescript from "./languages/typescript";
 import markdown from "./languages/markdown";
+import json from "./languages/json";
+import http from "./widgets/http";
 import { Language } from "@/canvas/tools/IDE/types";
 
 interface IDEProps {
@@ -25,11 +27,15 @@ export const IDE: React.FC<IDEProps> = ({
   language,
 }) => {
   const extensions = useMemo(() => {
+    if (language === "http") {
+      return [...http({ dependencies })];
+    }
     const base: Partial<
       Record<Language, (options: { dependencies: string[] }) => Extension[]>
     > = {
       ts: typescript,
       md: markdown,
+      json,
     };
 
     return [
@@ -45,6 +51,9 @@ export const IDE: React.FC<IDEProps> = ({
         lineNumbers: false,
         foldGutter: false,
         highlightActiveLine: true,
+        completionKeymap: true,
+        // defaultKeymap: true,
+        autocompletion: true,
       }}
       theme={isDarkMode ? "dark" : "light"}
       onChange={onCodeChange}
