@@ -1,11 +1,12 @@
 import {
+  defaultBindingUtils,
   defaultShapeUtils,
   Editor,
+  TLAssetStore,
   Tldraw,
-  useTLStore,
-  useValue,
 } from "@tldraw/tldraw";
-import React, { useCallback } from "react";
+import { useSync } from "@tldraw/sync";
+import React, { useCallback, useMemo } from "react";
 import "tldraw/tldraw.css";
 
 import { IDEUtil } from "./tools/IDE/util";
@@ -16,34 +17,40 @@ import { DependencyGraphProvider } from "@/runtime";
 export const customShapeUtils = [IDEUtil];
 export const customTools = [IDEShapeTool];
 
+const myAssetStore: TLAssetStore = {
+  async upload(file, asset) {
+    return "";
+    // return uploadFileAndReturnUrl(file)
+  },
+  resolve(asset) {
+    return "";
+  },
+};
+
 const Canvas: React.FC = () => {
   // const dependencies = useDependencyGraph({ editor });
   //
   // console.log({ dependencies });
-  const store = useTLStore({
-    shapeUtils: [...defaultShapeUtils, ...customShapeUtils],
+  const store = useSync({
+    shapeUtils: useMemo(() => [...defaultShapeUtils, ...customShapeUtils], []),
+    bindingUtils: defaultBindingUtils,
+    uri: `ws://localhost:5858/connect/foo`,
+
+    assets: myAssetStore,
   });
 
-  // store.listen(() => {
-  //   console.log(store.serialize("all"));
-  // });
-
-  // store.listen(({changes}) => {
-  //   changes.
-  // })
-
   const onMount = useCallback((editor: Editor) => {
-    editor.createShape({
-      type: "IDE",
-      x: 100,
-      y: 100,
-      props: {
-        title: "foobar",
-        code: "",
-        private: true,
-        language: "ts",
-      },
-    });
+    // editor.createShape({
+    //   type: "IDE",
+    //   x: 100,
+    //   y: 100,
+    //   props: {
+    //     title: "foobar",
+    //     code: "",
+    //     private: true,
+    //     language: "ts",
+    //   },
+    // });
   }, []);
 
   return (
@@ -55,6 +62,7 @@ const Canvas: React.FC = () => {
           tools={customTools}
           store={store}
           onMount={onMount}
+          deepLinks
           overrides={uiOverrides}
           components={components}
           assetUrls={staticAssets}

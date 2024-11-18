@@ -1,0 +1,42 @@
+services:
+  # Idea: observability
+  # hyperdx:
+  #   image: hyperdx/hyperdx-local
+  #   ports:
+  #     - "8080:8080" # HyperDX UI
+  #     - "8000:8000" # Private HyperDX API
+  #     - "4318:4318" # OpenTelemetry HTTP endpoint
+  #     - "4317:4317" # OpenTelemetry gRPC endpoint
+  #     - "8002:8002" # HyperDX HTTP Logging Endpoint
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 2GB
+  #       reservations:
+  #         memory: 1GB
+  #         cpus: "1.0"
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Idea: Faktory
+  faktory:
+    image: contribsys/faktory:latest
+    ports:
+      - "127.0.0.1:7419:7419"
+      - "127.0.0.1:7420:7420"
+
+volumes:
+  postgres_data:

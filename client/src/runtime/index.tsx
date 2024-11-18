@@ -6,7 +6,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { TLStore } from "@tldraw/tldraw";
+import { TLStoreWithStatus } from "@tldraw/tldraw";
 import { DependencyGraph } from "./dependency-graph";
 import { DependencyState } from "./dependency-state";
 import "./type-defs";
@@ -20,7 +20,7 @@ const DependencyGraphContext = createContext<DependencyGraphContextType | null>(
 );
 
 interface DependencyGraphProviderProps {
-  store: TLStore;
+  store: TLStoreWithStatus;
   children: React.ReactNode;
 }
 
@@ -33,8 +33,11 @@ export const DependencyGraphProvider: React.FC<
   const graphRef = useRef<DependencyGraph | null>(null);
 
   useEffect(() => {
+    if (!store.store) {
+      return;
+    }
     graphRef.current = new DependencyGraph({
-      store,
+      store: store.store,
       onDependencyChange: setDependencies,
     });
 
