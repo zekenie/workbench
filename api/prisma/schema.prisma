@@ -1,0 +1,61 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String         @id @default(cuid())
+  name           String?
+  email          String         @unique
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  refreshTokens  RefreshToken[]
+  passwordHash   String?
+  canvasAccesses CanvasAccess[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model ApiToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  // scopes???
+  // expires?
+}
+
+model Canvas {
+  id             String         @id @default(cuid())
+  content        Json?
+  canvasAccesses CanvasAccess[]
+  updatedAt      DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  title          String?
+  titleGenerated String?
+
+  description          String?
+  descriptionGenerated String?
+}
+
+model CanvasAccess {
+  id        String   @id @default(cuid())
+  canvasId  String
+  canvas    Canvas   @relation(fields: [canvasId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  // type String -- at some point some kind of COmmenter / Editor / Admin / etc
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@unique([userId, canvasId])
+}
