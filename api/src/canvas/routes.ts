@@ -1,20 +1,64 @@
 import Elysia, { t } from "elysia";
 import { authMiddleware } from "../auth/middleware";
-import { createCanvas, listCanvases, findMyCanvas } from "./service";
+import { countCanvases, createCanvas, listCanvases } from "./service";
 import { prisma } from "../db";
+import { offsetPaginationModel } from "../util/pagination/offset.model";
+
+const canvasPagination = offsetPaginationModel(
+  t.Object({
+    id: t.String({
+      format: "uuid",
+    }),
+    title: t.Union([t.String(), t.Null()]),
+    titleGenerated: t.Union([t.String(), t.Null()]),
+    description: t.Union([t.String(), t.Null()]),
+    createdAt: t.Date(),
+    updatedAt: t.Date(),
+  }),
+  {}
+);
 
 export const canvasRoutes = new Elysia({
   prefix: "/canvases",
   tags: ["canvas"],
 })
   .use(authMiddleware)
+  .use(canvasPagination)
   .get(
     "/",
-    async ({ principal }) => {
-      return listCanvases({ onBehalfOf: principal.id });
+    async ({ principal, query }) => {
+      const [records, total] = await Promise.all([
+        listCanvases({ onBehalfOf: principal.id, ...query }),
+        countCanvases({ onBehalfOf: principal.id }),
+      ]);
+      return {
+        records,
+        total,
+      };
     },
     {
       auth: "user",
+      query: "paginationQuery",
+      response: "paginationResponse",
+    }
+  )
+  .get(
+    "/snapshot",
+    async ({ query }) => {
+      const canvas = await prisma.canvas.findFirstOrThrow({
+        where: {
+          id: query.id,
+        },
+      });
+
+      return {
+        snapshot: canvas.content,
+      };
+    },
+    {
+      query: t.Object({
+        id: t.String(),
+      }),
     }
   )
   .post(
@@ -38,10 +82,10 @@ export const canvasRoutes = new Elysia({
     {
       auth: "api",
       body: t.Object({
+        id: t.String(),
         snapshot: t.Any({
           description: "TL Draw state snapshot",
         }),
-        id: t.String({ format: "uuid" }),
       }),
     }
   )

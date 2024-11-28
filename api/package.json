@@ -2,17 +2,18 @@
   "name": "server",
   "version": "1.0.50",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts",
+    "test": "bun --env-file=./.env.test test",
+    "dev": "bun --inspect --watch src/index.ts",
     "generate-keys": "bun scripts/generate-keys.ts",
-    "db:push": "bunx prisma db push",
-    "db:push:test": "NODE_ENV=test bunx prisma db push",
+    "generate-api-keys": "bun scripts/generate-api-keys.ts",
+    "db:push": "bun prisma db push",
+    "db:push:test": "bun --env-file=./.env.test prisma db push",
     "db:push:all": "bun run db:push && bun run db:push:test",
     
-    "db:studio": "bunx prisma studio",
-    "db:studio:test": "NODE_ENV=test bunx prisma studio",
-    "db:reset": "bunx prisma db push --force-reset",
-    "db:reset:test": "NODE_ENV=test bunx prisma db push --force-reset"
+    "db:studio": "bun prisma studio",
+    "db:studio:test": "bun --env-file=./.env.test prisma studio",
+    "db:reset": "bun prisma db push --force-reset",
+    "db:reset:test": "bun --env-file=./.env.test --env prisma db push --force-reset"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.1.1",

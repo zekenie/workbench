@@ -70,7 +70,7 @@ describe("canvases", () => {
         },
         {
           headers: {
-            "x-api-auth": "foo",
+            "x-api-secret": "foo",
             "x-api-id": apiToken.id,
           },
         }
@@ -86,27 +86,45 @@ describe("canvases", () => {
 
   describe("GET /", () => {
     it("rejects unauthenticated requests", async () => {
-      const { status } = await apiClient.canvases.index.get({});
+      const { status } = await apiClient.canvases.index.get({
+        query: {
+          skip: 0,
+          take: 10,
+        },
+      });
       expect(status).toBe(401);
     });
 
     it("lists no records belonging to you when there aren't any ", async () => {
       const { jwt } = await worldSetup();
       const { data } = await apiClient.canvases.index.get({
+        query: {
+          skip: 0,
+          take: 10,
+        },
         ...configureAuthenticatedRequest({ jwt }),
       });
 
-      expect(data).toEqual([]);
+      expect(data).toEqual({
+        records: [],
+        total: 0,
+      });
     });
 
     it("lists records belonging to you when they exist ", async () => {
       const { jwt, user } = await worldSetup();
       await createCanvas({ userId: user.id, title: "foobar" });
       const { data } = await apiClient.canvases.index.get({
+        query: {
+          skip: 0,
+          take: 10,
+        },
         ...configureAuthenticatedRequest({ jwt }),
       });
 
-      expect(data).toMatchObject([{ id: expect.any(String), title: "foobar" }]);
+      expect(data?.records).toMatchObject([
+        { id: expect.any(String), title: "foobar" },
+      ]);
     });
 
     it("does not include records that do not belong to you", async () => {
@@ -118,10 +136,14 @@ describe("canvases", () => {
       await createCanvas({ userId: anotherUser.id, title: "foobar" });
 
       const { data } = await apiClient.canvases.index.get({
+        query: {
+          skip: 0,
+          take: 10,
+        },
         ...configureAuthenticatedRequest({ jwt }),
       });
 
-      expect(data).toEqual([]);
+      expect(data?.records).toEqual([]);
     });
   });
 

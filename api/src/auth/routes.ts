@@ -7,8 +7,6 @@ import {
   verifyPassword,
   useRefreshToken,
 } from "./service";
-import { JWTPayloadSpec } from "@elysiajs/jwt";
-import { User } from "@prisma/client";
 import { getJWKS, sign } from "./jwt.service";
 
 const emailPasswordBody = t.Object({

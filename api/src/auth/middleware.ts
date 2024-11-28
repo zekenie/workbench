@@ -19,14 +19,14 @@ export const authMiddleware = new Elysia({ name: "Middleware.Auth" })
           principal: ApiToken;
         }
     > => {
-      if (headers["x-api-auth"] && headers["x-api-id"]) {
+      if (headers["x-api-secret"] && headers["x-api-id"]) {
         const apiToken = await prisma.apiToken.findFirstOrThrow({
           where: {
             id: headers["x-api-id"],
           },
         });
 
-        await Bun.password.verify(headers["x-api-auth"], apiToken.tokenHash);
+        await Bun.password.verify(headers["x-api-secret"], apiToken.tokenHash);
 
         return {
           type: "api",

@@ -7,20 +7,41 @@ import {
 import { mkdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { IDEProps } from "./tools/IDE/props";
+import { createAuthenticatedClient } from "./backend-server";
 
 // For this example we're just saving data to the local filesystem
-const DIR = "./.rooms";
-async function readSnapshotIfExists(roomId: string) {
-  try {
-    const data = await readFile(join(DIR, roomId));
-    return JSON.parse(data.toString()) ?? undefined;
-  } catch (e) {
-    return undefined;
+// const DIR = "./.rooms";
+async function readSnapshotIfExists(
+  roomId: string
+): Promise<RoomSnapshot | undefined> {
+  const { data } = await apiClient.canvases.snapshot.get({
+    $query: {
+      id: roomId,
+    },
+  });
+
+  if (data) {
+    return data.snapshot as unknown as RoomSnapshot;
   }
+  return undefined;
+  // make api auth snapshot endpoint
+  // try {
+  //   const data = await readFile(join(DIR, roomId));
+  //   return JSON.parse(data.toString()) ?? undefined;
+  // } catch (e) {
+  //   return undefined;
+  // }
 }
+
+const apiClient = createAuthenticatedClient(Bun.env.API_ID, Bun.env.API_SECRET);
+
 async function saveSnapshot(roomId: string, snapshot: RoomSnapshot) {
-  await mkdir(DIR, { recursive: true });
-  await writeFile(join(DIR, roomId), JSON.stringify(snapshot));
+  await apiClient.canvases.snapshot.post({
+    id: roomId,
+    snapshot,
+  });
+  // await mkdir(DIR, { recursive: true });
+  // await writeFile(join(DIR, roomId), JSON.stringify(snapshot));
 }
 
 // We'll keep an in-memory map of rooms and their data

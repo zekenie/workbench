@@ -56,11 +56,29 @@ export async function findMyCanvas({
   return canvas;
 }
 
-export async function listCanvases({ onBehalfOf }: { onBehalfOf: string }) {
+export async function countCanvases({ onBehalfOf }: { onBehalfOf: string }) {
+  return prisma.canvasAccess.count({
+    where: {
+      userId: onBehalfOf,
+    },
+  });
+}
+
+export async function listCanvases({
+  onBehalfOf,
+  skip,
+  take,
+}: {
+  onBehalfOf: string;
+  skip?: number;
+  take?: number;
+}) {
   const accesses = await prisma.canvasAccess.findMany({
     where: {
       userId: onBehalfOf,
     },
+    skip,
+    take,
     include: {
       canvas: {
         select: {
