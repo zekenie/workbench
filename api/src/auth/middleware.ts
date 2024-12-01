@@ -3,6 +3,7 @@ import { findUserById } from "./service";
 import { verify } from "./jwt.service";
 import { ApiToken, User } from "@prisma/client";
 import { prisma } from "../db";
+import { errors } from "jose";
 
 export const authMiddleware = new Elysia({ name: "Middleware.Auth" })
   .derive(
@@ -13,10 +14,17 @@ export const authMiddleware = new Elysia({ name: "Middleware.Auth" })
       | {
           type: "user";
           principal: User;
+          failure: null;
         }
       | {
           type: "api";
           principal: ApiToken;
+          failure: null;
+        }
+      | {
+          type: "user";
+          failure: "token-expired";
+          principal: null;
         }
     > => {
       if (headers["x-api-secret"] && headers["x-api-id"]) {
@@ -31,6 +39,7 @@ export const authMiddleware = new Elysia({ name: "Middleware.Auth" })
         return {
           type: "api",
           principal: apiToken,
+          failure: null,
         };
       }
 
@@ -39,23 +48,33 @@ export const authMiddleware = new Elysia({ name: "Middleware.Auth" })
       // @ts-expect-error
       if (!token) return { principal: null };
 
-      const verifiedAndParsedToken = await verify(token);
+      try {
+        const verifiedAndParsedToken = await verify(token);
 
-      const user: User = (await findUserById({
-        id: verifiedAndParsedToken.id as string,
-      })) as User;
+        const user: User = (await findUserById({
+          id: verifiedAndParsedToken.id as string,
+        })) as User;
 
-      return { type: "user", principal: user };
+        return { type: "user", principal: user, failure: null };
+      } catch (e) {
+        if (e instanceof errors.JWTExpired) {
+          return { type: "user", principal: null, failure: "token-expired" };
+        }
+        throw e;
+      }
     }
   )
   .macro(({ onBeforeHandle }) => ({
     // This is declaring a service method
     auth(value: "user" | "api" | "unauthenticated" = "unauthenticated") {
-      onBeforeHandle(({ principal, error, type }) => {
+      onBeforeHandle(({ principal, error, type, failure }) => {
         switch (value) {
           case "user":
             if (type !== "user") {
               return error(401);
+            }
+            if (failure && failure === "token-expired") {
+              return error(401, { message: "Expired token" });
             }
             if (!principal?.id) {
               return error(401);

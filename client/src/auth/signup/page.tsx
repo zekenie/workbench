@@ -1,5 +1,5 @@
-import { ActionFunctionArgs, Form, Link, useNavigate } from "react-router-dom";
-import { useSetupAuth } from "../provider";
+import { Form, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,25 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { backendClient } from "@/backend";
 import { useCallback, useEffect } from "react";
 
-// export async function action({ request }: ActionFunctionArgs) {
-//   const formData = await request.formData();
-//   const email = formData.get("email") as string;
-//   const password = formData.get("password") as string;
-
-//   const res = await backendClient.auth.signup.post({
-//     email,
-//     password,
-//   });
-
-//   console.log(res.status, res.data, res.error);
-//   return null;
-// }
-
 export default function SignupPage() {
-  const { signup, isAuthenticated, isLoading } = useSetupAuth();
+  const { state, signup } = useAuth();
 
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -38,23 +23,26 @@ export default function SignupPage() {
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
 
-      await signup({ email, password });
+      await signup({
+        email,
+        password,
+      });
     },
     [signup]
   );
 
   const navigate = useNavigate();
   useEffect(() => {
-    if (isLoading) {
+    if (state === "loading") {
       return;
     }
 
-    if (isAuthenticated) {
-      navigate("/boards");
+    if (state === "authenticated") {
+      navigate("/canvases");
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [state, navigate]);
   return (
-    <Form method="post" onSubmit={onSubmit}>
+    <Form onSubmit={onSubmit}>
       <Card className="mx-auto max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Sign Up</CardTitle>

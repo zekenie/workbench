@@ -25,7 +25,7 @@ export const canvasRoutes = new Elysia({
   .use(authMiddleware)
   .use(canvasPagination)
   .get(
-    "/",
+    "/list",
     async ({ principal, query }) => {
       const [records, total] = await Promise.all([
         listCanvases({ onBehalfOf: principal.id, ...query }),
@@ -97,10 +97,12 @@ export const canvasRoutes = new Elysia({
     },
     {
       auth: "user",
-      body: t.Object({
-        title: t.Optional(t.String()),
-        description: t.Optional(t.String()),
-      }),
+      body: t.Optional(
+        t.Object({
+          title: t.Optional(t.String()),
+          description: t.Optional(t.String()),
+        })
+      ),
       response: t.Object({
         id: t.String({ format: "uuid" }),
       }),

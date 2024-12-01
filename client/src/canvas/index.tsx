@@ -13,6 +13,7 @@ import { IDEUtil } from "./tools/IDE/util";
 import { components, staticAssets, uiOverrides } from "./ui-overrides";
 import { IDEShapeTool } from "./tools/IDE/tool";
 import { DependencyGraphProvider } from "@/runtime";
+import { useParams } from "react-router-dom";
 
 export const customShapeUtils = [IDEUtil];
 export const customTools = [IDEShapeTool];
@@ -31,10 +32,11 @@ const Canvas: React.FC = () => {
   // const dependencies = useDependencyGraph({ editor });
   //
   // console.log({ dependencies });
+  const { id } = useParams<{ id: string }>();
   const store = useSync({
     shapeUtils: useMemo(() => [...defaultShapeUtils, ...customShapeUtils], []),
     bindingUtils: defaultBindingUtils,
-    uri: `ws://localhost:5858/connect/foo`,
+    uri: `ws://localhost:5858/connect/${id}`,
 
     assets: myAssetStore,
   });

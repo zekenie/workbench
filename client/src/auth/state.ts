@@ -13,17 +13,19 @@ type Action =
   | "error"
   | "signup"
   | "refresh"
+  | "tokenExpired"
   | "tokenObtained"
   | "hasPersistedTokens";
 const authStateMachine = stateMachineFactory<State, Action>("unauthenticated")
   .addEvent("login", "unauthenticated", "loading")
   .addEvent("hasPersistedTokens", "unauthenticated", "stale")
+  .addEvent("tokenExpired", "authenticated", "stale")
   .addEvent("login", "failed", "loading")
   .addEvent("signup", "unauthenticated", "loading")
   .addEvent("signup", "failed", "loading")
   .addEvent("error", "loading", "failed")
   .addEvent("refresh", "stale", "loading")
-  .addEvent("tokenObtained", "loading", "authenticated")
+  .addEvent("tokenObtained", "*", "authenticated")
   .addEvent("logout", "authenticated", "unauthenticated");
 
 interface BaseAuthState {
@@ -96,15 +98,20 @@ type AuthAction =
   | ActionObject<"login">
   | ActionObject<"hasPersistedTokens", Tokens>
   | ActionObject<"logout">
+  | ActionObject<"tokenExpired">
   | ActionObject<"error", string>
   | ActionObject<"signup">
   | ActionObject<"refresh">
   | ActionObject<"tokenObtained", Tokens>;
 
 export function authReducer(state: AuthState, action: AuthAction): AuthState {
+  console.log("state", state);
+  console.log("action", action);
   const machine = authStateMachine.create().overwrite(state.state);
   if (!machine.canTrigger(action.type)) {
-    throw new Error("Invalid state transition");
+    throw new Error(
+      `Invalid state transition. cannot trigger ${action.type} from  ${state.state}`
+    );
   }
 
   machine.trigger(action.type);
@@ -125,6 +132,14 @@ export function authReducer(state: AuthState, action: AuthAction): AuthState {
         state: "stale",
         jwt: action.payload?.jwt!,
         refreshToken: action.payload?.refreshToken!,
+        error: null,
+      };
+      break;
+    case "tokenExpired":
+      nextState = {
+        state: "stale",
+        jwt: state.jwt!,
+        refreshToken: state.refreshToken!,
         error: null,
       };
       break;

@@ -14,11 +14,13 @@ import { createAuthenticatedClient } from "./backend-server";
 async function readSnapshotIfExists(
   roomId: string
 ): Promise<RoomSnapshot | undefined> {
-  const { data } = await apiClient.canvases.snapshot.get({
+  const { data, error } = await apiClient.canvases.snapshot.get({
     $query: {
       id: roomId,
     },
   });
+
+  console.log(JSON.stringify(error));
 
   if (data) {
     return data.snapshot as unknown as RoomSnapshot;
@@ -78,6 +80,7 @@ export async function makeOrLoadRoom(roomId: string) {
       }
       console.log("loading room", roomId);
       const initialSnapshot = await readSnapshotIfExists(roomId);
+      console.log(initialSnapshot);
 
       const roomState: RoomState = {
         needsPersist: false,

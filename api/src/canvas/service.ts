@@ -79,6 +79,11 @@ export async function listCanvases({
     },
     skip,
     take,
+    orderBy: {
+      canvas: {
+        updatedAt: "desc",
+      },
+    },
     include: {
       canvas: {
         select: {

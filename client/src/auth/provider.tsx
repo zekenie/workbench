@@ -8,50 +8,34 @@ import React, {
   useRef,
 } from "react";
 import { authReducer, initialState, PossibleStates } from "./state";
-import { backendClient, ClientType } from "../backend";
-import { createAuthenticatedClient } from "../backend";
-import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import { treaty, Treaty } from "../../../api/node_modules/@elysiajs/eden";
+import type { App } from "../../../api/src/";
 
 type Credentials = {
   email: string;
   password: string;
 };
 
-// Idea: do a switch type here sort of like actions with a type.
-// That way authenticatedClient isn't even on an unauthenticated state
-// that way you don't have to convey the uncertainty of authenticatedApiClient?.foo
-
-// You'd have different hooks too. `useAthenticated()` vs `useSetupAuth()`
-
-// another way would be to just have two hooks but one big context.
-// type AuthContextType = {
-//   isAuthenticated: boolean;
-//   isLoading: boolean;
-//   error: string | null;
-//   jwt: string | null;
-//   login: (credentials: Credentials) => Promise<void>;
-//   signup: (credentials: Credentials) => Promise<void>;
-//   logout: () => void;
-//   authenticatedApiClint: ClientType | null;
-// };
+type ClientType = Treaty.Create<App>;
 
 class UnexpectedlyUnauthenticatedError extends Error {}
 class UnexpectedlyAuthenticatedError extends Error {}
 
-type CreateSessionOptions = {
+type SessionMethods = {
   login: (credentials: Credentials) => Promise<void>;
   signup: (credentials: Credentials) => Promise<void>;
+  logout: () => void;
 };
 
 type AuthContextType =
-  | (PossibleStates["Unauthenticated"] & CreateSessionOptions)
-  | (PossibleStates["Failed"] & CreateSessionOptions)
-  | PossibleStates["Loading"]
-  | (PossibleStates["Authenticated"] & {
-      logout: () => void;
-      authenticatedApiClint: ClientType;
-    })
-  | PossibleStates["Stale"];
+  | (
+      | PossibleStates["Unauthenticated"]
+      | PossibleStates["Failed"]
+      | PossibleStates["Loading"]
+      | PossibleStates["Authenticated"]
+      | PossibleStates["Stale"]
+    ) & { client: ClientType } & SessionMethods;
 
 const STORAGE_KEY = {
   jwt: "auth_jwt",
@@ -69,26 +53,15 @@ export function useAuth() {
   return context;
 }
 
-export function useSetupAuth() {
-  const context = useAuth();
-
-  const navigate = useNavigate();
-
-  if (["unauthenticated", "failed"].includes(context.state)) {
-    return navigate("/boards");
-  }
-
-  return context;
-}
-
 export function useAuthenticated() {
   const context = useAuth();
 
-  const navigate = useNavigate();
-
   if (context.state !== "authenticated") {
-    navigate("/login");
-    return null;
+    // navigate("/login");
+    // return;
+    window.location.href = "/login";
+    return;
+    // throw new UnexpectedlyUnauthenticatedError();
   }
 
   return context;
@@ -99,12 +72,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const authenticatedApiClint = useMemo(
-    () => (state.jwt ? createAuthenticatedClient(state.jwt) : null),
-    [state.jwt]
+  const decodedJwt = useMemo(() => {
+    if (!state.jwt) {
+      return null;
+    }
+    return jwtDecode(state.jwt);
+  }, [state.jwt]);
+
+  const isExpired = useCallback(
+    (time: number = Date.now()) => {
+      if (!decodedJwt) {
+        return false;
+      }
+      return decodedJwt.exp && time >= decodedJwt.exp * 1000;
+    },
+    [decodedJwt]
   );
 
+  const backendClient: ClientType = useMemo(() => {
+    return treaty<App>("http://localhost:3000", {
+      onRequest(path) {
+        if (isExpired()) {
+          if (state.state !== "stale") {
+            dispatch({ type: "tokenExpired" });
+          }
+
+          // allow auth reqs to go through, but abort all others
+          if (!path.startsWith("/auth")) {
+            return {
+              signal: AbortSignal.abort("jwt expired"),
+            };
+          }
+        }
+
+        return {};
+      },
+      headers() {
+        return {
+          authorization: state.jwt ? `Bearer ${state.jwt}` : "",
+        };
+      },
+    });
+  }, [state.jwt, isExpired, state.state]);
+
   const refresh = useCallback(async () => {
+    console.trace("about to refetch");
     if (!state.refreshToken) {
       return;
     }
@@ -119,19 +131,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       dispatch({ type: "error", payload: "Token refresh failed" });
     }
-  }, []);
+  }, [state, backendClient]);
+
+  useEffect(
+    function refreshOnExpired() {
+      if (state.refreshToken && state.state === "stale") {
+        console.log("refreshOnExpired");
+        refresh().catch((err) => {
+          console.error("ffffailed to refresh");
+          console.error(err);
+        });
+      }
+    },
+    [state.refreshToken, state.state]
+  );
 
   useEffect(
     function loadTokensFromStorageOnMount() {
       const jwt = localStorage.getItem(STORAGE_KEY.jwt);
       const refreshToken = localStorage.getItem(STORAGE_KEY.refreshToken);
 
-      if (jwt && refreshToken) {
+      if (jwt && refreshToken && state.state === "unauthenticated") {
         dispatch({ type: "tokenObtained", payload: { jwt, refreshToken } });
         refresh();
       }
     },
-    [refresh]
+    [refresh, state]
   );
 
   const signup = useCallback(async (credentials: Credentials) => {
@@ -150,18 +175,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: "tokenObtained", payload: res.data });
   }, []);
 
-  // const navigate = useNavigate();
-  // useEffect(
-  //   function redirectOnError() {
-  //     navigate("/login");
-  //   },
-  //   [state.error, navigate]
-  // );
-
   const refreshInterval = useRef<number>();
   useEffect(() => {
     if (state.jwt && state.refreshToken) {
-      refresh();
       refreshInterval.current = window.setInterval(refresh, 5 * 60 * 1000);
 
       return () => {
@@ -176,8 +192,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     function syncLocalStorage() {
       if (state.jwt) {
         window.localStorage.setItem(STORAGE_KEY.jwt, state.jwt);
-      } else {
-        window.localStorage.removeItem(STORAGE_KEY.jwt);
       }
 
       if (state.refreshToken) {
@@ -185,8 +199,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           STORAGE_KEY.refreshToken,
           state.refreshToken
         );
-      } else {
-        window.localStorage.removeItem(STORAGE_KEY.refreshToken);
       }
     },
     [state.jwt, state.refreshToken]
@@ -194,42 +206,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = useCallback(() => {
     dispatch({ type: "logout" });
+    window.localStorage.removeItem(STORAGE_KEY.refreshToken);
+    window.localStorage.removeItem(STORAGE_KEY.jwt);
   }, []);
 
-  authenticatedApiClint?.hello.get();
-
   const contextValue: AuthContextType = useMemo(() => {
-    if (state.state === "authenticated") {
-      return {
-        ...state,
-        logout,
-      };
-    }
-    if (state.state === "failed") {
-      return {
-        ...state,
-        login,
-        signup,
-      };
-    }
-
-    if (state.state === "unauthenticated") {
-      return {
-        ...state,
-        login,
-        signup,
-      };
-    }
-
-    if (state.state === "loading") {
-      return { ...state };
-    }
-
-    if (state.state === "stale") {
-      return { ...state };
-    }
-
-    throw new Error("unsupported state");
+    return {
+      ...state,
+      login,
+      signup,
+      logout,
+      client: backendClient,
+    };
   }, [state]);
 
   return (

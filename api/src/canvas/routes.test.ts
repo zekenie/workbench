@@ -86,7 +86,7 @@ describe("canvases", () => {
 
   describe("GET /", () => {
     it("rejects unauthenticated requests", async () => {
-      const { status } = await apiClient.canvases.index.get({
+      const { status } = await apiClient.canvases.list.get({
         query: {
           skip: 0,
           take: 10,
@@ -97,7 +97,7 @@ describe("canvases", () => {
 
     it("lists no records belonging to you when there aren't any ", async () => {
       const { jwt } = await worldSetup();
-      const { data } = await apiClient.canvases.index.get({
+      const { data } = await apiClient.canvases.list.get({
         query: {
           skip: 0,
           take: 10,
@@ -114,7 +114,7 @@ describe("canvases", () => {
     it("lists records belonging to you when they exist ", async () => {
       const { jwt, user } = await worldSetup();
       await createCanvas({ userId: user.id, title: "foobar" });
-      const { data } = await apiClient.canvases.index.get({
+      const { data } = await apiClient.canvases.list.get({
         query: {
           skip: 0,
           take: 10,
@@ -135,7 +135,7 @@ describe("canvases", () => {
 
       await createCanvas({ userId: anotherUser.id, title: "foobar" });
 
-      const { data } = await apiClient.canvases.index.get({
+      const { data } = await apiClient.canvases.list.get({
         query: {
           skip: 0,
           take: 10,

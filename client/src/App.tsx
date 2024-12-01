@@ -1,4 +1,6 @@
 import "./App.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import {
   createBrowserRouter,
   Outlet,
@@ -10,14 +12,11 @@ import {
 import Canvas from "./canvas";
 import LoginPage from "./auth/login/page";
 import SignupPage from "./auth/signup/page";
-import { AuthProvider, useAuth, useAuthenticated } from "./auth/provider";
+import { AuthProvider, useAuth } from "./auth/provider";
 import { FC } from "react";
+import { CanvasListPage } from "./canvas-list/page";
 
-const Boards = () => {
-  const obj = useAuthenticated();
-
-  return <pre>{JSON.stringify(obj, null, 2)}</pre>;
-};
+const queryClient = new QueryClient();
 
 const Route: FC<{ requiresAuth?: boolean; children: React.ReactNode }> = ({
   requiresAuth,
@@ -27,9 +26,11 @@ const Route: FC<{ requiresAuth?: boolean; children: React.ReactNode }> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
+  console.log("we are in route", state);
+
   if (requiresAuth) {
     if (state === "loading" || state === "stale") {
-      return null;
+      return <>Stale auth</>;
     }
     if (state !== "authenticated") {
       navigate(`/login?then=${location.pathname}`);
@@ -46,15 +47,15 @@ const router = createBrowserRouter([
     path: "/",
     children: [
       {
-        path: "boards",
+        path: "canvases",
         element: (
           <Route requiresAuth>
-            <Boards />
+            <CanvasListPage />
           </Route>
         ),
       },
       {
-        path: "boards/:id",
+        path: "canvases/:id",
         element: (
           <Route requiresAuth>
             <Canvas />
@@ -90,9 +91,11 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

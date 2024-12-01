@@ -9,7 +9,6 @@
     "db:push": "bun prisma db push",
     "db:push:test": "bun --env-file=./.env.test prisma db push",
     "db:push:all": "bun run db:push && bun run db:push:test",
-    
     "db:studio": "bun prisma studio",
     "db:studio:test": "bun --env-file=./.env.test prisma studio",
     "db:reset": "bun prisma db push --force-reset",
