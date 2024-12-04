@@ -1,5 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { NodeTransformer } from "./ts-morph";
+import { format } from "prettier";
+
+const formatCode = async (code: string) => {
+  return format(code, {
+    parser: "typescript",
+    semi: true,
+  });
+};
 
 describe("NodeTransformer", () => {
   const transformer = new NodeTransformer();
@@ -15,10 +23,53 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("expr")).toBe(
-        `function() {
-  return 1 + 2;
-}`
+      expect(await formatCode(result.expr)).toBe(
+        await formatCode(`function expr() { return 3; }`)
+      );
+    });
+
+    it("should treat function expressions as simple expressions", async () => {
+      const nodes = [
+        {
+          id: "expr",
+          code: "function foo() { return 'hi' }",
+          dependencies: [],
+        },
+      ];
+
+      const result = await transformer.transform(nodes);
+      expect(await formatCode(result.expr)).toBe(
+        await formatCode(`function foo() { return 'hi' }`)
+      );
+    });
+
+    it("should treat async function expressions as simple expressions", async () => {
+      const nodes = [
+        {
+          id: "expr",
+          code: "async function hi() { return 'hi' }",
+          dependencies: [],
+        },
+      ];
+
+      const result = await transformer.transform(nodes);
+      expect(await formatCode(result.expr)).toBe(
+        await formatCode(`async function hi() { return 'hi' }`)
+      );
+    });
+
+    it("should treat generator function expressions as simple expressions", async () => {
+      const nodes = [
+        {
+          id: "expr",
+          code: "function* foo() { return 'hi' }",
+          dependencies: [],
+        },
+      ];
+
+      const result = await transformer.transform(nodes);
+      expect(await formatCode(result.expr)).toBe(
+        await formatCode(`function* foo() { return 'hi' }`)
       );
     });
 
@@ -32,10 +83,10 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("calc")).toBe(
-        `function(data, multiplier) {
-  return data.value * multiplier;
-}`
+      expect(result.calc).toBe(
+        await formatCode(`function calc(data, multiplier) {
+          return data.value * multiplier;
+        }`)
       );
     });
 
@@ -49,11 +100,10 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("decl")).toBe(
-        `function() {
-  const x = 42
-  return { x };
-}`
+      expect(result.decl).toBe(
+        await formatCode(`function decl() {
+          return { x: 42 };
+        }`)
       );
     });
 
@@ -67,11 +117,10 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("multi")).toBe(
-        `function() {
-  const x = 42; let y = 'hello';
-  return { x, y };
-}`
+      expect(result.multi).toBe(
+        await formatCode(`function multi() {
+          return { x: 42, y: 'hello' };
+        }`)
       );
     });
   });
@@ -87,10 +136,10 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("arrow")).toBe(
-        `function() {
-  return x => x * 2;
-}`
+      expect(result.arrow).toBe(
+        await formatCode(`function arrow() {
+          return x => x * 2;
+        }`)
       );
     });
 
@@ -104,10 +153,10 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("chain")).toBe(
-        `function(arr) {
-  return arr.map(x => x * 2).filter(x => x > 0);
-}`
+      expect(result.chain).toBe(
+        await formatCode(`function chain(arr) {
+          return arr.map(x => x * 2).filter(x => x > 0);
+        }`)
       );
     });
 
@@ -125,12 +174,12 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("multiline")).toBe(
-        `function(data) {
-  return data
-            .filter(x => x > 0)
-            .map(x => x * 2);
-}`
+      expect(result.multiline).toBe(
+        await formatCode(`function multiline(data) {
+          return data
+                    .filter(x => x > 0)
+                    .map(x => x * 2);
+        }`)
       );
     });
 
@@ -147,10 +196,10 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("commented")).toBe(
-        `function(data) {
-  return data.value * 2;
-}`
+      expect(await formatCode(result.commented)).toBe(
+        await formatCode(`function commented(data) {
+          return data.value * 2;
+        }`)
       );
     });
   });
@@ -166,10 +215,8 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("empty")).toBe(
-        `function() {
-  
-}`
+      expect(await formatCode(result.empty)).toBe(
+        await formatCode(`function empty() {}`)
       );
     });
 
@@ -183,10 +230,8 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("whitespace")).toBe(
-        `function() {
-  
-}`
+      expect(await formatCode(result.whitespace)).toBe(
+        await formatCode(`function whitespace() {}`)
       );
     });
 
@@ -200,11 +245,10 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("declWithDeps")).toBe(
-        `function(input) {
-  const result = input.value * 2;
-  return { result };
-}`
+      expect(await formatCode(result.declWithDeps)).toBe(
+        await formatCode(`function declWithDeps(input) {
+          return { result: input.value * 2 };
+        }`)
       );
     });
 
@@ -223,13 +267,12 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("complex")).toBe(
-        `function(data) {
-  return (() => {
-            const temp = data.value * 2;
-            return temp + 1;
-          })();
-}`
+      expect(await formatCode(result.complex)).toBe(
+        await formatCode(`function complex(data) {
+          return (() => {
+                    return data.value * 2 + 1;
+                  })();
+        }`)
       );
     });
 
@@ -243,10 +286,11 @@ describe("NodeTransformer", () => {
       ];
 
       const result = await transformer.transform(nodes);
-      expect(result.get("multi")).toBe(
-        `function() {
-  foo(); bar()
-}`
+      expect(result.multi).toBe(
+        await formatCode(`function multi() {
+          foo();
+          bar();
+        }`)
       );
     });
   });

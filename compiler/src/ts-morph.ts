@@ -1,6 +1,19 @@
-import { Project, ScriptTarget, Node, SourceFile } from "ts-morph";
+import {
+  Project,
+  ScriptTarget,
+  Node,
+  SourceFile,
+  Statement,
+  ts,
+} from "ts-morph";
+import { Transpiler } from "bun";
 
-interface CodeNode {
+const transpiler = new Transpiler({
+  target: "bun",
+  loader: "ts",
+});
+
+export interface CodeNode {
   id: string;
   code: string;
   dependencies: string[];
@@ -17,13 +30,15 @@ export class NodeTransformer {
     });
   }
 
-  async transform(nodes: CodeNode[]): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
+  async transform(nodes: CodeNode[]): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
 
     for (const node of nodes) {
       try {
         const transformedCode = this.transformNode(node);
-        result.set(node.id, transformedCode);
+        const transpiledCode = await transpiler.transform(transformedCode);
+
+        result[node.id] = transpiledCode;
       } catch (error) {
         if (error instanceof Error) {
           throw new Error(
@@ -42,24 +57,29 @@ export class NodeTransformer {
     const statements = sourceFile.getStatements();
 
     if (statements.length === 0) {
-      return this.createEmptyFunction(node.dependencies);
+      return this.createEmptyFunction({
+        id: node.id,
+        dependencies: node.dependencies,
+      });
     }
 
     // Handle declarations
     const declarations = this.findDeclarations(statements);
     if (declarations.length > 0) {
-      return this.createFunctionWithDeclarations(
-        node.code,
+      return this.createFunctionWithDeclarations({
+        code: node.code,
+        id: node.id,
         declarations,
-        node.dependencies
-      );
+        dependencies: node.dependencies,
+      });
     }
 
     // Handle expressions and other statements
     return this.createFunctionWithReturnStatement({
       code: node.code,
+      id: node.id,
       dependencies: node.dependencies,
-      statementCount: statements.length,
+      statements,
     });
   }
 
@@ -87,25 +107,37 @@ export class NodeTransformer {
     return declarations;
   }
 
-  private createEmptyFunction(dependencies: string[]): string {
+  private createEmptyFunction({
+    dependencies,
+    id,
+  }: {
+    dependencies: string[];
+    id: string;
+  }): string {
     const params = dependencies.join(", ");
-    return `function(${params}) {
+    return `function ${id}(${params}) {
   
 }`;
   }
 
-  private createFunctionWithDeclarations(
-    code: string,
-    declarations: string[],
-    dependencies: string[]
-  ): string {
+  private createFunctionWithDeclarations({
+    code,
+    declarations,
+    dependencies,
+    id,
+  }: {
+    code: string;
+    declarations: string[];
+    id: string;
+    dependencies: string[];
+  }): string {
     const params = dependencies.join(", ");
     const returnObj = declarations.join(", ");
 
     // Remove comments and normalize whitespace
     const cleanCode = this.removeComments(code);
 
-    return `function(${params}) {
+    return `function ${id}(${params}) {
   ${cleanCode}
   return { ${returnObj} };
 }`;
@@ -113,12 +145,14 @@ export class NodeTransformer {
 
   private createFunctionWithReturnStatement({
     code,
+    id,
     dependencies,
-    statementCount,
+    statements,
   }: {
     code: string;
+    id: string;
     dependencies: string[];
-    statementCount: number;
+    statements: Statement<ts.Statement>[];
   }): string {
     const params = dependencies.join(", ");
 
@@ -126,13 +160,22 @@ export class NodeTransformer {
     const cleanCode = this.removeComments(code);
 
     // Check if the code is a multi-statement block
-    if (statementCount > 1) {
-      return `function(${params}) {
+    if (statements.length > 1) {
+      return `function ${id}(${params}) {
   ${cleanCode}
 }`;
     }
 
-    return `function(${params}) {
+    const [firstStatement] = statements;
+
+    if (
+      statements.length === 1 &&
+      firstStatement.getKindName() === "FunctionDeclaration"
+    ) {
+      return cleanCode;
+    }
+
+    return `function ${id}(${params}) {
   return ${cleanCode};
 }`;
   }
@@ -148,40 +191,3 @@ export class NodeTransformer {
     return code.trim();
   }
 }
-
-async function example() {
-  const transformer = new NodeTransformer();
-
-  const nodes = [
-    {
-      id: "data",
-      code: "const nums: number[] = [1,2,3]",
-      dependencies: [],
-    },
-    {
-      id: "config",
-      code: "const step = 2; const label = 'doubled'",
-      dependencies: [],
-    },
-    {
-      id: "doubled",
-      code: "data.nums.map(x => x * config.step)",
-      dependencies: ["data", "config"],
-    },
-    {
-      id: "multiline",
-      code: `
-        // This is still an expression despite comments and whitespace
-        data.nums
-          .map(x => x * config.step)
-          .filter(x => x > 5)
-      `,
-      dependencies: ["data", "config"],
-    },
-  ];
-
-  const transformed = await transformer.transform(nodes);
-  return transformed;
-}
-
-example().then(console.log).catch(console.warn);

@@ -80,7 +80,9 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["auth"] })
 
         throw new Error("invalid token");
       } catch (e) {
-        return error(401, { message: "invalid or expired refreshToken" });
+        console.error("err");
+        console.error(e);
+        return error(401, { message: "invalid or expired refreshTok222en" });
       }
     },
     {

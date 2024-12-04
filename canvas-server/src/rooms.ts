@@ -96,10 +96,12 @@ export async function makeOrLoadRoom(roomId: string) {
             }
           },
           onDataChange() {
+            console.log("Data changed!");
             roomState.needsPersist = true;
           },
         }),
       };
+
       rooms.set(roomId, roomState);
       return null; // all good
     })

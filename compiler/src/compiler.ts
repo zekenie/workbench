@@ -1,151 +1,173 @@
-import { parse, transform, print } from "@swc/core";
-import type { Program } from "@swc/core";
+import { RoomSnapshot } from "@tldraw/sync-core";
+import { extractCode } from "./code";
+import { extractDependencies } from "./dependencies";
+import { UnknownRecord } from "@tldraw/tldraw";
+import { keyBy, invert } from "lodash-es";
+import { CodeNode, NodeTransformer } from "./ts-morph";
+import { snapshot } from "./snapshot";
 
-interface Node {
-  id: string;
-  code: string;
-  dependencies: string[];
+async function hashString(str: string, algorithm = "SHA-256") {
+  // Convert string to Uint8Array
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+
+  // Generate hash using Web Crypto
+  const hashBuffer = await crypto.subtle.digest(algorithm, data);
+
+  // Convert buffer to hex string
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return hashHex;
 }
 
-class NodeTransformer {
-  /**
-   * Determines if a program consists of a single expression
-   * Examples:
-   * - "x + y" -> true
-   * - "data.nums.map(x => x * 2)" -> true
-   * - "const x = 42" -> false
-   * - "foo(); bar()" -> false (multiple statements)
-   */
-  private isExpression(ast: Program): boolean {
-    if (ast.type !== "Module") return false;
+class CompiledNode {
+  private _hash?: string;
 
-    const body = ast.body;
-    if (body.length !== 1) return false;
+  constructor(
+    private readonly id: string,
+    private readonly inputCode: string,
+    private readonly compiledCode: string,
+    readonly dependencies: string[]
+  ) {}
 
-    const statement = body[0];
-    return statement.type === "ExpressionStatement";
+  async hash() {
+    if (!this._hash) {
+      this._hash = await hashString(this.compiledCode);
+    }
+    return this._hash;
+  }
+}
+class CompiledCanvas {
+  nodes: CompiledNode[] = [];
+  public addNode({
+    id,
+    inputCode,
+    compiledCode,
+    dependencies,
+  }: {
+    id: string;
+    inputCode: string;
+    compiledCode: string;
+    dependencies: string[];
+  }) {
+    this.nodes.push(
+      new CompiledNode(id, inputCode, compiledCode, dependencies)
+    );
+    return this;
   }
 
-  async transform(nodes: Node[]): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
+  [Symbol.iterator]() {
+    return this.nodes[Symbol.iterator]();
+  }
+}
 
+class Compiler {
+  public async compile(snapshot: RoomSnapshot): Promise<CompiledCanvas> {
+    const dependencies = extractDependencies(snapshot);
+    const code = extractCode(snapshot);
+
+    const codeNameToTlDrawIdMap = this.codeNameToTlDrawId({
+      snapshotRecords: snapshot.documents.map((doc) => doc.state),
+      codeNames: Object.keys(code),
+    });
+
+    const codeNameDependencies =
+      this.transformTlDrawDependenciesToCodenameDependencies({
+        tldrawDependencies: dependencies,
+        codeNameToTlDrawIdMap,
+      });
+
+    const nodes: CodeNode[] = Object.keys(code).map((codeName) => ({
+      id: codeName,
+      code: code[codeName],
+      dependencies: codeNameDependencies[codeName] || [],
+    }));
+
+    const compiledCode = await new NodeTransformer().transform(nodes);
+
+    const compiledCanvas = new CompiledCanvas();
     for (const node of nodes) {
-      const ast = await parse(node.code, {
-        syntax: "typescript",
-        target: "es2024",
-        comments: false,
-        tsx: false,
+      compiledCanvas.addNode({
+        id: node.id,
+        inputCode: node.code,
+        dependencies: node.dependencies,
+        compiledCode: compiledCode[node.id],
       });
-
-      const isExpression = this.isExpression(ast);
-
-      const transformed = await transform(ast, {
-        minify: false,
-        plugin: (program: Program) => {
-          return this.transformNodeReferences(program);
-        },
-      });
-
-      transformed.code;
-
-      const wrappedCode = this.wrapInFunction(
-        transformed.code,
-        node.dependencies,
-        isExpression
-      );
-      result.set(node.id, wrappedCode);
     }
 
-    return result;
-  }
-
-  private transformNodeReferences(program: Program): Program {
-    return program;
+    return compiledCanvas;
   }
 
   /**
-   * Wraps code in a function, handling expressions and declarations differently
+   * takes a dependency graph structure like
+   * `{ node1: [node2, node3] }`
+   * where all ids are tldraw ids
+   *
+   * and returns codename graph
+   * `{ code1: [code2, code3] }
    */
-  private wrapInFunction(
-    code: string,
-    paramNames: string[] = [],
-    isExpression: boolean
-  ): string {
-    code = code.trim().replace(/;$/, "");
+  private transformTlDrawDependenciesToCodenameDependencies({
+    codeNameToTlDrawIdMap,
+    tldrawDependencies,
+  }: {
+    codeNameToTlDrawIdMap: Record<string, string>;
+    tldrawDependencies: ReturnType<typeof extractDependencies>;
+  }) {
+    const tlDrawIdToCodeNameMap = invert(codeNameToTlDrawIdMap);
+    return Object.entries(tldrawDependencies).reduce(
+      (acc, [key, dependencies]) => {
+        const codeName = tlDrawIdToCodeNameMap[key];
+        if (codeName) {
+          acc[codeName] = dependencies
+            .map((dep) => tlDrawIdToCodeNameMap[dep])
+            .filter(Boolean);
+        }
+        return acc;
+      },
+      {} as Record<string, string[]>
+    );
+  }
 
-    // For expressions, directly return the result
-    if (isExpression) {
-      return `function(${paramNames.join(", ")}) {
-  return ${code};
-}`;
-    }
+  /**
+   * Returns a mapping of the codename ids to the tldraw ids
+   */
+  private codeNameToTlDrawId({
+    snapshotRecords,
+    codeNames,
+  }: {
+    snapshotRecords: UnknownRecord[];
+    codeNames: string[];
+  }): Record<string, string> {
+    const snapshotRecordsByCodename = keyBy(
+      // @ts-expect-error
+      snapshotRecords.filter((rec) => Boolean(rec.props?.title)),
+      // @ts-expect-error
+      (rec) => rec.props?.title
+    ) as Record<string, UnknownRecord>;
+    return codeNames.reduce(
+      (acc, codeName) => {
+        const doc = snapshotRecordsByCodename[codeName];
+        if (!doc) {
+          throw new Error(`No document found for code name: ${codeName}`);
+        }
 
-    // For declarations, extract declared variables and return them as an object
-    const declarations = code
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(
-        (line) =>
-          line.startsWith("const ") ||
-          line.startsWith("let ") ||
-          line.startsWith("var ")
-      )
-      .map((line) => {
-        const match = line.match(/(?:const|let|var)\s+(\w+)\s*=/);
-        return match ? match[1] : null;
-      })
-      .filter((name): name is string => name !== null);
+        acc[codeName] = doc.id;
 
-    console.log({ declarations });
-
-    if (declarations.length > 0) {
-      return `function(${paramNames.join(", ")}) {
-  ${code};
-  return { ${declarations.join(", ")} };
-}`;
-    }
-
-    // Fallback for any other case
-    return `function(${paramNames.join(", ")}) {
-  ${code}
-}`;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
   }
 }
 
-// Example usage:
-async function example() {
-  const transformer = new NodeTransformer();
+const compiled = await new Compiler().compile(snapshot);
 
-  const nodes = [
-    {
-      id: "data",
-      code: "const nums = [1,2,3]",
-      dependencies: [],
-    },
-    {
-      id: "config",
-      code: "const step = 2; const label = 'doubled'",
-      dependencies: [],
-    },
-    {
-      id: "doubled",
-      code: "data.nums.map(x => x * config.step)",
-      dependencies: ["data", "config"],
-    },
-    {
-      id: "multiline",
-      code: `
-        // This is still an expression despite comments and whitespace
-        data.nums
-          .map(x => x * config.step)
-          .filter(x => x > 5)
-      `,
-      dependencies: ["data", "config"],
-    },
-  ];
-
-  const transformed = await transformer.transform(nodes);
-  return transformed;
+for (const node of compiled) {
+  console.log(node);
+  console.log({ hash: await node.hash() });
 }
 
-example().then(console.log).catch(console.warn);
+debugger;

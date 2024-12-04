@@ -9,7 +9,8 @@
     "@tldraw/sync-core": "^3.4.1",
     "@tldraw/tlschema": "^3.4.1",
     "itty-router": "^5.0.18",
-    "unfurl.js": "^6.4.0"
+    "unfurl.js": "^6.4.0",
+    "tools": "workspace:../packages/tools"
   },
   "devDependencies": {
     "bun-types": "latest"

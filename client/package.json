@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "copy-types": "cp -r ./node_modules/bun-types public/types/bun-types",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "@uiw/codemirror-extensions-mentions": "^4.23.3",
     "@uiw/react-codemirror": "^4.23.3",
     "@valtown/codemirror-ts": "^2.2.0",
+    "bun-types": "^1.1.38",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "codemirror-json-schema": "^0.7.8",

@@ -100,6 +100,16 @@ export class IDEUtil extends ShapeUtil<IDEShape> {
           >
             <input
               placeholder="Node name"
+              value={shape.props.title}
+              onChange={(e) => {
+                this.editor.updateShape({
+                  id: shape.id,
+                  type: NAME,
+                  props: {
+                    title: e.currentTarget.value,
+                  },
+                });
+              }}
               className="px-2 w-full bg-transparent placeholder-slate-300 text-slate-100 h-full"
             />
             <LanguageDropdown

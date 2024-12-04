@@ -1,10 +1,19 @@
-import { TLArrowBinding, TLRecord, TLStore } from "@tldraw/tldraw";
+import type {
+  TLArrowBinding,
+  TLRecord,
+  TLStore,
+  UnknownRecord,
+} from "@tldraw/tldraw";
 import { groupBy, keyBy } from "lodash-es";
-import { Action, dependencyReducer, DependencyState } from "./dependency-state";
+import {
+  type Action,
+  dependencyReducer,
+  type DependencyState,
+} from "./dependency-state.ts";
 
 export class DependencyGraph {
   private store?: TLStore;
-  private dependencies: DependencyState = {};
+  public _dependencies: DependencyState = {};
   private onDependencyChange: (dependencies: DependencyState) => void;
 
   constructor({
@@ -14,11 +23,15 @@ export class DependencyGraph {
   }: {
     store?: TLStore;
     onDependencyChange: (dependencies: DependencyState) => void;
-    initialState?: TLRecord[];
+    initialState?: UnknownRecord[];
   }) {
     this.store = store;
     this.onDependencyChange = onDependencyChange;
     this.handleAddedRecords(initialState || this.store?.allRecords() || []);
+  }
+
+  public get dependencies(): DependencyState {
+    return this._dependencies;
   }
 
   public listen() {
@@ -27,7 +40,7 @@ export class DependencyGraph {
     }
     return this.store.listen(
       async (historyRecord) => {
-        const dependenciesBeforeChanges = this.dependencies;
+        const dependenciesBeforeChanges = this._dependencies;
         const { added, removed, updated } = historyRecord.changes;
 
         for (const removedRecord of Object.values(removed)) {
@@ -51,10 +64,10 @@ export class DependencyGraph {
 
         this.handleAddedRecords(Object.values(added));
 
-        const dependenciesAfterChanges = this.dependencies;
+        const dependenciesAfterChanges = this._dependencies;
 
         if (dependenciesAfterChanges !== dependenciesBeforeChanges) {
-          this.onDependencyChange(this.dependencies);
+          this.onDependencyChange(this._dependencies);
         }
       },
       {
@@ -64,10 +77,10 @@ export class DependencyGraph {
   }
 
   private dispatch(action: Action) {
-    this.dependencies = dependencyReducer(this.dependencies, action);
+    this._dependencies = dependencyReducer(this._dependencies, action);
   }
 
-  private handleAddedRecords(records: TLRecord[]) {
+  private handleAddedRecords(records: UnknownRecord[]) {
     const bindings = records.filter((rec) => rec.typeName === "binding");
 
     return Object.values(groupBy(bindings, "fromId")).forEach(
