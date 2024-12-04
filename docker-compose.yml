@@ -32,6 +32,7 @@ services:
       retries: 5
 
   # Idea: Faktory
+  # we will need to mount a volume to get persistent data
   faktory:
     image: contribsys/faktory:latest
     ports:

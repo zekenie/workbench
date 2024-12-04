@@ -1,10 +1,9 @@
-import { RoomSnapshot } from "@tldraw/sync-core";
+import { type RoomSnapshot } from "@tldraw/sync-core";
 import { extractCode } from "./code";
 import { extractDependencies } from "./dependencies";
-import { UnknownRecord } from "@tldraw/tldraw";
+import { type UnknownRecord } from "@tldraw/tldraw";
 import { keyBy, invert } from "lodash-es";
-import { CodeNode, NodeTransformer } from "./ts-morph";
-import { snapshot } from "./snapshot";
+import { type CodeNode, NodeTransformer } from "./ts-morph";
 
 async function hashString(str: string, algorithm = "SHA-256") {
   // Convert string to Uint8Array
@@ -162,12 +161,3 @@ class Compiler {
     );
   }
 }
-
-const compiled = await new Compiler().compile(snapshot);
-
-for (const node of compiled) {
-  console.log(node);
-  console.log({ hash: await node.hash() });
-}
-
-debugger;

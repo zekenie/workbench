@@ -1,5 +1,5 @@
 {
-  "name": "tools",
+  "name": "compiler",
   "type": "module",
   "private": true,
   "module": "dist/index.js",
@@ -17,10 +17,22 @@
     "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@tldraw/sync-core": "^3.5.1",
+    "@types/lodash-es": "^4.17.12",
+    "bun": "^1.1.38",
+    "dependencies": "workspace:*",
+    "lodash-es": "^4.17.21",
+    "ts-morph": "^24.0.0"
+  },
+  "devDependencies": {
+    "@tldraw/tldraw": "^3.5.1",
+    "@types/bun": "latest",
+    "bun-types": "^1.1.38",
+    "prettier": "^3.4.2",
+    "tools": "workspace:*"
+  },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "@tldraw/tlschema": "^3.5.1"
   }
 }

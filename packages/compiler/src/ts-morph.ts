@@ -6,9 +6,8 @@ import {
   Statement,
   ts,
 } from "ts-morph";
-import { Transpiler } from "bun";
 
-const transpiler = new Transpiler({
+const transpiler = new Bun.Transpiler({
   target: "bun",
   loader: "ts",
 });
