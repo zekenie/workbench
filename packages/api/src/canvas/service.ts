@@ -1,5 +1,6 @@
 import { randomUUIDv7 } from "bun";
 import { prisma } from "../db";
+import faktory from "faktory-worker";
 
 export async function createCanvas({
   userId,
@@ -28,6 +29,34 @@ export async function createCanvas({
 
     return canvas.id;
   });
+}
+
+export async function updateSnapshot({
+  id,
+  snapshot,
+}: {
+  id: string;
+  snapshot: any;
+}) {
+  const canvas = await prisma.canvas.findFirstOrThrow({
+    where: {
+      id: id,
+    },
+  });
+
+  await prisma.canvas.update({
+    data: {
+      content: snapshot,
+    },
+    where: {
+      id: canvas.id,
+    },
+  });
+
+  // should we pool this?
+  const fakClient = await faktory.connect();
+
+  await fakClient.job("canvas.compile", { id }).push();
 }
 
 export async function findMyCanvas({

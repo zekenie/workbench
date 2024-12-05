@@ -1,6 +1,11 @@
 import Elysia, { t } from "elysia";
 import { authMiddleware } from "../auth/middleware";
-import { countCanvases, createCanvas, listCanvases } from "./service";
+import {
+  countCanvases,
+  createCanvas,
+  listCanvases,
+  updateSnapshot,
+} from "./service";
 import { prisma } from "../db";
 import { offsetPaginationModel } from "../util/pagination/offset.model";
 
@@ -28,8 +33,8 @@ export const canvasRoutes = new Elysia({
     "/list",
     async ({ principal, query }) => {
       const [records, total] = await Promise.all([
-        listCanvases({ onBehalfOf: principal.id, ...query }),
-        countCanvases({ onBehalfOf: principal.id }),
+        listCanvases({ onBehalfOf: principal!.id, ...query }),
+        countCanvases({ onBehalfOf: principal!.id }),
       ]);
       return {
         records,
@@ -56,6 +61,7 @@ export const canvasRoutes = new Elysia({
       };
     },
     {
+      auth: "api",
       query: t.Object({
         id: t.String(),
       }),
@@ -64,19 +70,9 @@ export const canvasRoutes = new Elysia({
   .post(
     "/snapshot",
     async ({ body }) => {
-      const canvas = await prisma.canvas.findFirstOrThrow({
-        where: {
-          id: body.id,
-        },
-      });
-
-      await prisma.canvas.update({
-        data: {
-          content: body.snapshot,
-        },
-        where: {
-          id: canvas.id,
-        },
+      await updateSnapshot({
+        id: body.id,
+        snapshot: body.snapshot,
       });
     },
     {
@@ -92,7 +88,7 @@ export const canvasRoutes = new Elysia({
   .post(
     "/create",
     async ({ principal }) => {
-      const id = await createCanvas({ userId: principal.id });
+      const id = await createCanvas({ userId: principal!.id });
       return { id };
     },
     {
