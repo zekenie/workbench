@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { authReducer, initialState, PossibleStates } from "./state";
 import { jwtDecode } from "jwt-decode";
-import { treaty, Treaty } from "../../../api/node_modules/@elysiajs/eden";
+import { treaty, Treaty } from "../../../../node_modules/@elysiajs/eden";
 import type { App } from "../../../api/src/";
 
 type Credentials = {
@@ -28,14 +28,13 @@ type SessionMethods = {
   logout: () => void;
 };
 
-type AuthContextType =
-  | (
-      | PossibleStates["Unauthenticated"]
-      | PossibleStates["Failed"]
-      | PossibleStates["Loading"]
-      | PossibleStates["Authenticated"]
-      | PossibleStates["Stale"]
-    ) & { client: ClientType } & SessionMethods;
+type AuthContextType = (
+  | PossibleStates["Unauthenticated"]
+  | PossibleStates["Failed"]
+  | PossibleStates["Loading"]
+  | PossibleStates["Authenticated"]
+  | PossibleStates["Stale"]
+) & { client: ClientType } & SessionMethods;
 
 const STORAGE_KEY = {
   jwt: "auth_jwt",

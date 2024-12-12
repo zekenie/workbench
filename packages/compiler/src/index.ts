@@ -22,24 +22,32 @@ async function hashString(str: string, algorithm = "SHA-256") {
   return hashHex;
 }
 
-class CompiledNode {
-  private _hash?: string;
+export class CompiledNode {
+  private _compiledCodeHash?: string;
+  private _inputCodeHash?: string;
 
   constructor(
-    private readonly id: string,
-    private readonly inputCode: string,
-    private readonly compiledCode: string,
+    readonly id: string,
+    readonly inputCode: string,
+    readonly compiledCode: string,
     readonly dependencies: string[]
   ) {}
 
-  async hash() {
-    if (!this._hash) {
-      this._hash = await hashString(this.compiledCode);
+  async inputCodeHash() {
+    if (!this._inputCodeHash) {
+      this._inputCodeHash = await hashString(this.inputCode);
     }
-    return this._hash;
+    return this._inputCodeHash;
+  }
+
+  async compiledCodeHash() {
+    if (!this._compiledCodeHash) {
+      this._compiledCodeHash = await hashString(this.compiledCode);
+    }
+    return this._compiledCodeHash;
   }
 }
-class CompiledCanvas {
+export class CompiledCanvas {
   nodes: CompiledNode[] = [];
   public addNode({
     id,
@@ -63,7 +71,7 @@ class CompiledCanvas {
   }
 }
 
-class Compiler {
+export class Compiler {
   public async compile(snapshot: RoomSnapshot): Promise<CompiledCanvas> {
     const dependencies = extractDependencies(snapshot);
     const code = extractCode(snapshot);

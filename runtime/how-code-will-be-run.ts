@@ -1,5 +1,7 @@
-import { VM } from "vm";
+import * as vm from "vm";
 import { webcrypto } from "crypto";
+import { Database } from "bun:sqlite";
+import { FileSystemRouter } from "bun";
 
 /**
  * Base context provided to all VMs
@@ -15,9 +17,10 @@ const baseContext = {
 
   // Bun APIs
   Bun: globalThis.Bun,
-  Database: globalThis.Database,
+  Database: Database,
   File: globalThis.File,
-  FileSystemRouter: globalThis.FileSystemRouter,
+  FileSystemRouter,
+  // FileSystemRouter: globalThis.FileSystemRouter,
 
   // Memory and threading
   ArrayBuffer: globalThis.ArrayBuffer,
@@ -58,11 +61,6 @@ const baseContext = {
  * and wire them to Observable's runtime
  */
 export function createRuntimeEnvironment() {
-  const vm = new VM({
-    contextName: "observable-context",
-    contextOrigin: "node",
-  });
-
   const context = vm.createContext(baseContext);
 
   /**

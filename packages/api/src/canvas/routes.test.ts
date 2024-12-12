@@ -5,6 +5,8 @@ import { prisma } from "../db";
 import { sign } from "../auth/jwt.service";
 import { createCanvas } from "./service";
 import { randomUUIDv7 } from "bun";
+import { snapshot } from "./fixtures/snapshot";
+import { startWorker } from "../worker";
 
 const apiClient = treaty(canvasRoutes);
 
@@ -180,6 +182,101 @@ describe("canvases", () => {
       const { status } = await apiClient.canvases.create.post({});
 
       expect(status).toBe(401);
+    });
+  });
+
+  describe("GET /compiled", () => {
+    it("emits an empty array for a blank canvas", async () => {
+      const { jwt } = await worldSetup();
+
+      const apiToken = await prisma.apiToken.create({
+        data: {
+          tokenHash: await Bun.password.hash("foo"),
+        },
+      });
+
+      const { data } = await apiClient.canvases.create.post(
+        {},
+        { ...configureAuthenticatedRequest({ jwt }) }
+      );
+
+      const canvasId = data?.id;
+
+      const abortController = new AbortController();
+      const { data: streamData } = await apiClient.canvases.compiled.get({
+        fetch: {
+          signal: abortController.signal,
+        },
+        query: { id: canvasId! },
+        headers: {
+          "x-api-secret": "foo",
+          "x-api-id": apiToken.id,
+        },
+      });
+
+      for await (const chunk of streamData!) {
+        expect(chunk.original).toEqual([]);
+        expect(chunk.type).toEqual("original");
+        abortController.abort();
+        break;
+      }
+    });
+
+    it("emits a `changed` event when the canvas has changed", async () => {
+      const { jwt } = await worldSetup();
+      const worker = await startWorker();
+
+      const apiToken = await prisma.apiToken.create({
+        data: {
+          tokenHash: await Bun.password.hash("foo"),
+        },
+      });
+
+      const { data } = await apiClient.canvases.create.post(
+        {},
+        { ...configureAuthenticatedRequest({ jwt }) }
+      );
+
+      const canvasId = data?.id;
+
+      const abortController = new AbortController();
+      const { data: streamData } = await apiClient.canvases.compiled.get({
+        fetch: {
+          signal: abortController.signal,
+        },
+        query: { id: canvasId! },
+        headers: {
+          "x-api-secret": "foo",
+          "x-api-id": apiToken.id,
+        },
+      });
+
+      await apiClient.canvases.snapshot.post(
+        {
+          snapshot: snapshot as any,
+          id: canvasId!,
+        },
+        {
+          headers: {
+            "x-api-secret": "foo",
+            "x-api-id": apiToken.id,
+          },
+        }
+      );
+
+      for await (const chunk of streamData!) {
+        if (chunk.type === "original") {
+          continue;
+        }
+
+        expect(chunk.codeNames).toEqual(["birthdate", "now", "age"]);
+        expect(chunk.type).toEqual("changed");
+        expect(chunk.changed).toHaveLength(3);
+        break;
+      }
+
+      abortController.abort();
+      await worker.stop();
     });
   });
 });

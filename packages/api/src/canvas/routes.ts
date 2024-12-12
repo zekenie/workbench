@@ -3,11 +3,14 @@ import { authMiddleware } from "../auth/middleware";
 import {
   countCanvases,
   createCanvas,
+  getCompiledCode,
+  getCompiledCodeDiff,
   listCanvases,
   updateSnapshot,
 } from "./service";
 import { prisma } from "../db";
 import { offsetPaginationModel } from "../util/pagination/offset.model";
+import pubsub from "../pubsub";
 
 const canvasPagination = offsetPaginationModel(
   t.Object({
@@ -82,6 +85,45 @@ export const canvasRoutes = new Elysia({
         snapshot: t.Any({
           description: "TL Draw state snapshot",
         }),
+      }),
+    }
+  )
+  .get(
+    "/compiled",
+    async function* compiled({ query }) {
+      let { latest } = await getCompiledCode({ id: query.id });
+      yield {
+        type: "original",
+        original: latest,
+      };
+      for await (const message of pubsub.crossSubscribeIterator(
+        "canvasId",
+        query.id
+      )) {
+        if (message.event === "canvas.compile") {
+          const {
+            latest: newLatest,
+            codeNames,
+            changed,
+          } = await getCompiledCodeDiff({
+            original: latest,
+            id: query.id,
+          });
+
+          latest = newLatest;
+
+          yield {
+            type: "changed",
+            codeNames,
+            changed,
+          };
+        }
+      }
+    },
+    {
+      auth: "api",
+      query: t.Object({
+        id: t.String(),
       }),
     }
   )

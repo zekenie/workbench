@@ -1,5 +1,4 @@
 import { DependencyGraph } from "dependencies";
-import { snapshot } from "./snapshot";
 import type { RoomSnapshot } from "@tldraw/sync-core";
 import type { DependencyState } from "../../dependencies/dist/dependency-state";
 

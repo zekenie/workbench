@@ -4,8 +4,6 @@ import {
   defaultBindingSchemas,
   defaultShapeSchemas,
 } from "@tldraw/tlschema";
-import { mkdir, readFile, writeFile } from "fs/promises";
-import { join } from "path";
 import { IDEProps } from "./tools/IDE/props";
 import { createAuthenticatedClient } from "./backend-server";
 
@@ -15,7 +13,7 @@ async function readSnapshotIfExists(
   roomId: string
 ): Promise<RoomSnapshot | undefined> {
   const { data, error } = await apiClient.canvases.snapshot.get({
-    $query: {
+    query: {
       id: roomId,
     },
   });
@@ -26,13 +24,6 @@ async function readSnapshotIfExists(
     return data.snapshot as unknown as RoomSnapshot;
   }
   return undefined;
-  // make api auth snapshot endpoint
-  // try {
-  //   const data = await readFile(join(DIR, roomId));
-  //   return JSON.parse(data.toString()) ?? undefined;
-  // } catch (e) {
-  //   return undefined;
-  // }
 }
 
 const apiClient = createAuthenticatedClient(Bun.env.API_ID, Bun.env.API_SECRET);
@@ -42,8 +33,6 @@ async function saveSnapshot(roomId: string, snapshot: RoomSnapshot) {
     id: roomId,
     snapshot,
   });
-  // await mkdir(DIR, { recursive: true });
-  // await writeFile(join(DIR, roomId), JSON.stringify(snapshot));
 }
 
 // We'll keep an in-memory map of rooms and their data

@@ -14,7 +14,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc",
+    "build": "bun build --external @tldraw/sync-core ./src/index.ts --outdir ./dist --target node && tsc",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

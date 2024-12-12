@@ -1,0 +1,26 @@
+{
+  "name": "pubsub",
+  "type": "module",
+  "private": true,
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf ./dist && bun build ./src/index.ts --outdir ./dist --external @redis/client --target node && tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "bun run ./src/index.ts"
+  },
+  "peerDependencies": {
+    "@redis/client": "^1.6.0",
+    "zod": "^3.23.8",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,6 +1,21 @@
 import { randomUUIDv7 } from "bun";
 import { prisma } from "../db";
-import faktory from "faktory-worker";
+import { faktoryClient } from "../jobs";
+import pubsub from "../pubsub";
+import { RoomSnapshot } from "@tldraw/sync-core";
+import { createHash } from "crypto";
+import { CanvasAccess, CodeNode } from "@prisma/client";
+
+type HashAlgorithm = "sha256" | "sha512" | "md5";
+type DigestFormat = "hex" | "base64";
+
+export function hashString(
+  input: string,
+  algorithm: HashAlgorithm = "sha256",
+  encoding: DigestFormat = "hex"
+): string {
+  return createHash(algorithm).update(input).digest(encoding);
+}
 
 export async function createCanvas({
   userId,
@@ -36,7 +51,7 @@ export async function updateSnapshot({
   snapshot,
 }: {
   id: string;
-  snapshot: any;
+  snapshot: RoomSnapshot;
 }) {
   const canvas = await prisma.canvas.findFirstOrThrow({
     where: {
@@ -46,17 +61,20 @@ export async function updateSnapshot({
 
   await prisma.canvas.update({
     data: {
-      content: snapshot,
+      content: snapshot as any,
     },
     where: {
       id: canvas.id,
     },
   });
 
-  // should we pool this?
-  const fakClient = await faktory.connect();
-
-  await fakClient.job("canvas.compile", { id }).push();
+  await faktoryClient.job("canvas.compile", { id }).push();
+  await pubsub.publish({
+    event: "canvas.snapshot",
+    canvasId: id,
+    clock: snapshot.clock,
+    digest: hashString(JSON.stringify(snapshot)),
+  });
 }
 
 export async function findMyCanvas({
@@ -129,4 +147,43 @@ export async function listCanvases({
   });
 
   return accesses.map((a) => a.canvas);
+}
+
+export async function getCompiledCode({ id }: { id: string }) {
+  const latest = await prisma.codeNode.findMany({
+    select: {
+      compiledCode: true,
+      compiledCodeHash: true,
+      codeName: true,
+    },
+    where: {
+      canvasId: id,
+    },
+  });
+
+  return {
+    latest,
+    codeNames: latest.map((node) => node.codeName),
+  };
+}
+
+export async function getCompiledCodeDiff({
+  original,
+  id,
+}: {
+  original: Pick<CodeNode, "compiledCode" | "compiledCodeHash" | "codeName">[];
+  id: string;
+}) {
+  const { latest, codeNames } = await getCompiledCode({ id });
+  const existingHashes = new Set(original.map((node) => node.compiledCodeHash));
+
+  const changed = latest.filter((node) => {
+    return !existingHashes.has(node.compiledCodeHash);
+  });
+
+  return {
+    codeNames,
+    changed,
+    latest,
+  };
 }

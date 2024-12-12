@@ -39,5 +39,20 @@ services:
       - "127.0.0.1:7419:7419"
       - "127.0.0.1:7420:7420"
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   postgres_data:
+  redis-data:
+    driver: local

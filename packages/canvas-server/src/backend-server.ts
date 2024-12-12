@@ -1,11 +1,11 @@
 // wtf... weird version mismatch issue seemed to be resolved this way?????
-import { edenTreaty } from "../../api/node_modules/@elysiajs/eden";
+import { treaty } from "../../../node_modules/@elysiajs/eden";
 import type { App } from "../../api/src/";
 
-export const backendClient = edenTreaty<App>("localhost:3000");
+export const backendClient = treaty<App>("localhost:3000");
 
 export const createAuthenticatedClient = (id: string, secret: string) =>
-  edenTreaty<App>("localhost:3000", {
+  treaty<App>("localhost:3000", {
     fetcher: (input, init = {}) => {
       init.headers = {
         ...init.headers,
