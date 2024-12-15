@@ -215,10 +215,12 @@ describe("canvases", () => {
       });
 
       for await (const chunk of streamData!) {
-        expect(chunk.original).toEqual([]);
-        expect(chunk.type).toEqual("original");
-        abortController.abort();
-        break;
+        if (chunk.type === "original") {
+          expect(chunk.original).toEqual([]);
+          expect(chunk.type).toEqual("original");
+          abortController.abort();
+          break;
+        }
       }
     });
 

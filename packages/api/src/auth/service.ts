@@ -75,7 +75,7 @@ export class IncorrectPasswordError extends Error {}
 
 class UserDoesNotHavePasswordHashError extends Error {}
 
-export async function generateRefreshToken(
+async function generateRefreshToken(
   bytes: number = 32,
   { user }: { user: User | null } = { user: null }
 ) {
@@ -103,10 +103,14 @@ export async function useRefreshToken(token: string) {
       },
       where: {
         tokenHash: hash,
+        usedAt: null,
       },
     });
 
-    await prisma.refreshToken.delete({ where: { id: storedToken.id } });
+    await prisma.refreshToken.update({
+      data: { usedAt: new Date() },
+      where: { id: storedToken.id },
+    });
 
     const newToken = await generateRefreshToken(32, { user: storedToken.user });
 

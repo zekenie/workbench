@@ -149,12 +149,15 @@ export async function listCanvases({
   return accesses.map((a) => a.canvas);
 }
 
+export type CompiledCode = Awaited<ReturnType<typeof getCompiledCode>>;
+
 export async function getCompiledCode({ id }: { id: string }) {
   const latest = await prisma.codeNode.findMany({
     select: {
       compiledCode: true,
       compiledCodeHash: true,
       codeName: true,
+      dependencies: true,
     },
     where: {
       canvasId: id,

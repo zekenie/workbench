@@ -1,6 +1,7 @@
 import Elysia, { t } from "elysia";
 import { authMiddleware } from "../auth/middleware";
 import {
+  CompiledCode,
   countCanvases,
   createCanvas,
   getCompiledCode,
@@ -25,6 +26,17 @@ const canvasPagination = offsetPaginationModel(
   }),
   {}
 );
+
+type CompiledEvents =
+  | {
+      type: "original";
+      original: CompiledCode["latest"];
+    }
+  | {
+      type: "changed";
+      codeNames: string[];
+      changed: CompiledCode["latest"];
+    };
 
 export const canvasRoutes = new Elysia({
   prefix: "/canvases",
@@ -90,7 +102,9 @@ export const canvasRoutes = new Elysia({
   )
   .get(
     "/compiled",
-    async function* compiled({ query }) {
+    async function* compiled({
+      query,
+    }): AsyncGenerator<CompiledEvents, void, unknown> {
       let { latest } = await getCompiledCode({ id: query.id });
       yield {
         type: "original",

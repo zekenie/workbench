@@ -25,6 +25,7 @@ const authStateMachine = stateMachineFactory<State, Action>("unauthenticated")
   .addEvent("signup", "failed", "loading")
   .addEvent("error", "loading", "failed")
   .addEvent("refresh", "stale", "loading")
+  .addEvent("refresh", "authenticated", "loading")
   .addEvent("tokenObtained", "*", "authenticated")
   .addEvent("logout", "authenticated", "unauthenticated");
 

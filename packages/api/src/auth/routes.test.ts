@@ -81,6 +81,30 @@ describe("auth", () => {
       expect(data?.refreshToken).not.toBe(signupRes.data?.refreshToken!);
     });
 
+    it("gives back a new jwt and refresh token even when coming from login", async () => {
+      await api.auth.signup.post({
+        email: "oooo@oo.com",
+        password: "foobar",
+      });
+
+      const loginRes = await api.auth.login.post({
+        email: "oooo@oo.com",
+        password: "foobar",
+      });
+
+      const { data } = await api.auth.refresh.post({
+        refreshToken: loginRes.data?.refreshToken!,
+      });
+
+      expect(data).toMatchObject({
+        jwt: expect.any(String),
+        refreshToken: expect.any(String),
+      });
+
+      expect(data?.jwt).not.toBe(loginRes.data?.jwt);
+      expect(data?.refreshToken).not.toBe(loginRes.data?.refreshToken!);
+    });
+
     it("doesn't let you use the same token twice", async () => {
       const signupRes = await api.auth.signup.post({
         email: "oooo@oo.com",

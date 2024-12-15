@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "@observablehq/runtime": "^6.0.0",
-    "@tldraw/sync-core": "^3.6.0",
     "compiler": "workspace:*"
   }
 }

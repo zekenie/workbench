@@ -19,11 +19,12 @@ model User {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  user      User?     @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
 }
 
 model ApiToken {
