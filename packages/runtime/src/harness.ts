@@ -22,7 +22,7 @@ export class Harness {
     if (!this.config.liveEdit) {
       return;
     }
-    const { data } = await backendClient.canvases.compiled.get({
+    const { data } = await backendClient.compiler.compiled.get({
       query: { id: this.config.liveEdit.canvasId },
     });
     for await (const chunk of data!) {
