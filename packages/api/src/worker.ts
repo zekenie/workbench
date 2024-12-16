@@ -1,7 +1,8 @@
 import faktory from "faktory-worker";
 import "./compiler/compile.job.js";
+import { once } from "lodash-es";
 
-export async function startWorker() {
+export const startWorker = once(async () => {
   const worker = await faktory.work();
 
   worker.on("error", () => {
@@ -13,4 +14,4 @@ export async function startWorker() {
   });
 
   return worker;
-}
+});

@@ -1,14 +1,13 @@
 import Elysia, { t } from "elysia";
 import { authMiddleware } from "../auth/middleware";
+import { prisma } from "../db";
+import { offsetPaginationModel } from "../util/pagination/offset.model";
 import {
   countCanvases,
   createCanvas,
   listCanvases,
   updateSnapshot,
 } from "./service";
-import { prisma } from "../db";
-import { offsetPaginationModel } from "../util/pagination/offset.model";
-import pubsub from "../pubsub";
 
 const canvasPagination = offsetPaginationModel(
   t.Object({

@@ -1,7 +1,6 @@
 import swagger from "@elysiajs/swagger";
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
-import { authenticatedRoutes } from "./authenticated.routes";
 import { startWorker } from "./worker";
 
 import { auth } from "./auth/routes";
@@ -11,7 +10,7 @@ import { compilerRoutes } from "./compiler/routes";
 export const app = new Elysia()
   .use(swagger())
   .use(cors())
-  .use(authenticatedRoutes)
+
   .use(canvasRoutes)
   .use(compilerRoutes)
   .use(auth)
