@@ -1,11 +1,8 @@
 import Elysia, { t } from "elysia";
 import { authMiddleware } from "../auth/middleware";
 import {
-  CompiledCode,
   countCanvases,
   createCanvas,
-  getCompiledCode,
-  getCompiledCodeDiff,
   listCanvases,
   updateSnapshot,
 } from "./service";
@@ -26,17 +23,6 @@ const canvasPagination = offsetPaginationModel(
   }),
   {}
 );
-
-type CompiledEvents =
-  | {
-      type: "original";
-      original: CompiledCode["latest"];
-    }
-  | {
-      type: "changed";
-      codeNames: string[];
-      changed: CompiledCode["latest"];
-    };
 
 export const canvasRoutes = new Elysia({
   prefix: "/canvases",
@@ -100,47 +86,7 @@ export const canvasRoutes = new Elysia({
       }),
     }
   )
-  .get(
-    "/compiled",
-    async function* compiled({
-      query,
-    }): AsyncGenerator<CompiledEvents, void, unknown> {
-      let { latest } = await getCompiledCode({ id: query.id });
-      yield {
-        type: "original",
-        original: latest,
-      };
-      for await (const message of pubsub.crossSubscribeIterator(
-        "canvasId",
-        query.id
-      )) {
-        if (message.event === "canvas.compile") {
-          const {
-            latest: newLatest,
-            codeNames,
-            changed,
-          } = await getCompiledCodeDiff({
-            original: latest,
-            id: query.id,
-          });
 
-          latest = newLatest;
-
-          yield {
-            type: "changed",
-            codeNames,
-            changed,
-          };
-        }
-      }
-    },
-    {
-      auth: "api",
-      query: t.Object({
-        id: t.String(),
-      }),
-    }
-  )
   .post(
     "/create",
     async ({ principal }) => {

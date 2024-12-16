@@ -1,5 +1,5 @@
 import faktory from "faktory-worker";
-import "./canvas/compile.job.ts";
+import "./compiler/compile.job.js";
 
 export async function startWorker() {
   const worker = await faktory.work();

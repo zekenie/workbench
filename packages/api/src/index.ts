@@ -6,12 +6,14 @@ import { startWorker } from "./worker";
 
 import { auth } from "./auth/routes";
 import { canvasRoutes } from "./canvas/routes";
+import { compilerRoutes } from "./compiler/routes";
 
-const app = new Elysia()
+export const app = new Elysia()
   .use(swagger())
   .use(cors())
   .use(authenticatedRoutes)
   .use(canvasRoutes)
+  .use(compilerRoutes)
   .use(auth)
   .listen(3000);
 
