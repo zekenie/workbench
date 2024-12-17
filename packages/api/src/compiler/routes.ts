@@ -1,5 +1,9 @@
 import Elysia, { t } from "elysia";
-import { CompiledCode, getCompiledCode, getCompiledCodeDiff } from "./service";
+import {
+  CompiledCode,
+  getLatestCompiledCode,
+  getCompiledCodeDiff,
+} from "./service";
 import { authMiddleware } from "../auth/middleware";
 import pubsub from "../pubsub";
 
@@ -24,7 +28,7 @@ export const compilerRoutes = new Elysia({
     async function* compiled({
       query,
     }): AsyncGenerator<CompiledEvents, void, unknown> {
-      let { latest } = await getCompiledCode({ id: query.id });
+      let { latest } = await getLatestCompiledCode({ id: query.id });
       yield {
         type: "original",
         original: latest,

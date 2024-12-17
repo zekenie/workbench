@@ -1,12 +1,10 @@
-import { describe, expect, it, beforeEach } from "bun:test";
-import { canvasRoutes } from "./routes";
 import { treaty } from "@elysiajs/eden";
-import { prisma } from "../db";
-import { sign } from "../auth/jwt.service";
-import { createCanvas } from "./service";
 import { randomUUIDv7 } from "bun";
-import { snapshot } from "./fixtures/snapshot";
-import { startWorker } from "../worker";
+import { beforeEach, describe, expect, it } from "bun:test";
+import { sign } from "../auth/jwt.service";
+import { prisma } from "../db";
+import { canvasRoutes } from "./routes";
+import { createCanvas } from "./service";
 
 const apiClient = treaty(canvasRoutes);
 
@@ -36,7 +34,7 @@ describe("canvases", () => {
     it("rejects unauthenticated requests", async () => {
       const { status } = await apiClient.canvases.snapshot.post({
         id: randomUUIDv7(),
-        snapshot: {},
+        snapshot: { clock: 1 },
       });
       expect(status).toBe(401);
     });
@@ -46,7 +44,7 @@ describe("canvases", () => {
       const { status } = await apiClient.canvases.snapshot.post(
         {
           id: randomUUIDv7(),
-          snapshot: {},
+          snapshot: { clock: 1 },
         },
         {
           ...configureAuthenticatedRequest({ jwt }),
@@ -68,7 +66,7 @@ describe("canvases", () => {
       const { status } = await apiClient.canvases.snapshot.post(
         {
           id,
-          snapshot: { foobar: "baz" },
+          snapshot: { foobar: "baz", clock: 1 },
         },
         {
           headers: {
@@ -79,8 +77,13 @@ describe("canvases", () => {
       );
 
       expect(status).toBe(200);
-      const canvas = await prisma.canvas.findFirstOrThrow({ where: { id } });
-      expect(canvas.content).toMatchObject({
+      const { content } = await prisma.snapshot.findFirstOrThrow({
+        where: { canvasId: id },
+        orderBy: {
+          clock: "desc",
+        },
+      });
+      expect(content).toMatchObject({
         foobar: "baz",
       });
     });

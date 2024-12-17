@@ -1,10 +1,7 @@
 import { randomUUIDv7 } from "bun";
 import { prisma } from "../db";
-import { faktoryClient } from "../jobs";
-import pubsub from "../pubsub";
 import { RoomSnapshot } from "@tldraw/sync-core";
 import { createHash } from "crypto";
-import { CanvasAccess, CodeNode } from "@prisma/client";
 
 type HashAlgorithm = "sha256" | "sha512" | "md5";
 type DigestFormat = "hex" | "base64";
@@ -53,27 +50,12 @@ export async function updateSnapshot({
   id: string;
   snapshot: RoomSnapshot;
 }) {
-  const canvas = await prisma.canvas.findFirstOrThrow({
-    where: {
-      id: id,
-    },
-  });
-
-  await prisma.canvas.update({
+  await prisma.snapshot.create({
     data: {
+      canvasId: id,
       content: snapshot as any,
+      clock: snapshot.clock,
     },
-    where: {
-      id: canvas.id,
-    },
-  });
-
-  await faktoryClient.job("canvas.compile", { id }).push();
-  await pubsub.publish({
-    event: "canvas.snapshot",
-    canvasId: id,
-    clock: snapshot.clock,
-    digest: hashString(JSON.stringify(snapshot)),
   });
 }
 

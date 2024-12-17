@@ -5,9 +5,13 @@ import { offsetPaginationModel } from "../util/pagination/offset.model";
 import {
   countCanvases,
   createCanvas,
+  hashString,
   listCanvases,
   updateSnapshot,
 } from "./service";
+import pubsub from "../pubsub";
+import { faktoryClient } from "../jobs";
+import { snapshot } from "./fixtures/snapshot";
 
 const canvasPagination = offsetPaginationModel(
   t.Object({
@@ -50,14 +54,15 @@ export const canvasRoutes = new Elysia({
   .get(
     "/snapshot",
     async ({ query }) => {
-      const canvas = await prisma.canvas.findFirstOrThrow({
+      const snapshot = await prisma.snapshot.findFirst({
         where: {
-          id: query.id,
+          canvasId: query.id,
         },
+        orderBy: { clock: "desc" },
       });
 
       return {
-        snapshot: canvas.content,
+        snapshot: snapshot?.content,
       };
     },
     {
@@ -72,16 +77,27 @@ export const canvasRoutes = new Elysia({
     async ({ body }) => {
       await updateSnapshot({
         id: body.id,
-        snapshot: body.snapshot,
+        snapshot: body.snapshot as any,
+      });
+
+      await faktoryClient.job("canvas.compile", { id: body.id }).push();
+      await pubsub.publish({
+        event: "canvas.snapshot",
+        canvasId: body.id,
+        clock: body.snapshot.clock,
+        digest: hashString(JSON.stringify(snapshot)),
       });
     },
     {
       auth: "api",
       body: t.Object({
         id: t.String(),
-        snapshot: t.Any({
-          description: "TL Draw state snapshot",
-        }),
+        snapshot: t.Intersect([
+          t.Record(t.String(), t.Unknown()),
+          t.Object({
+            clock: t.Number(),
+          }),
+        ]),
       }),
     }
   )
