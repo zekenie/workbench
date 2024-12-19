@@ -1,10 +1,3 @@
-export type CompiledNode = {
-  compiledCodeHash: string;
-  codeName: string;
-  compiledCode: string;
-  dependencies: string[];
-};
-
 export type RuntimeValue =
   | {
       state: "pending";

@@ -1,5 +1,5 @@
 import type { Harness } from "../harness";
-import type { Serve } from "bun";
+import type { Serve, ServeOptions } from "bun";
 import { router } from "./router";
 import { startAndKeepWatchingLiveEdits } from "./retry";
 
@@ -14,7 +14,7 @@ export async function createServer<T>({
   serverOptions = {},
 }: {
   harness: Harness;
-  serverOptions: Omit<Serve<T>, "fetch">;
+  serverOptions: Omit<ServeOptions, "fetch">;
 }) {
   const server = Bun.serve({
     ...serverOptions,

@@ -12,7 +12,7 @@ import { createAuthenticatedClient } from "./backend-server";
 async function readSnapshotIfExists(
   roomId: string
 ): Promise<RoomSnapshot | undefined> {
-  const { data, error } = await apiClient.canvases.snapshot.get({
+  const { data, error } = await apiClient.snapshots.snapshot.get({
     query: {
       id: roomId,
     },
@@ -25,12 +25,13 @@ async function readSnapshotIfExists(
   }
   return undefined;
 }
-
+console.log("Bun env:", Bun.env.API_ID, Bun.env.API_SECRET);
 const apiClient = createAuthenticatedClient(Bun.env.API_ID, Bun.env.API_SECRET);
 
 async function saveSnapshot(roomId: string, snapshot: RoomSnapshot) {
-  await apiClient.canvases.snapshot.post({
+  await apiClient.snapshots.snapshot.post({
     id: roomId,
+    // @ts-ignore
     snapshot,
   });
 }

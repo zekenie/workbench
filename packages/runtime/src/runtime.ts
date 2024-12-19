@@ -1,7 +1,8 @@
 // import { CompiledCanvas, CompiledNode } from "compiler";
 // @ts-expect-error
 import { Runtime } from "@observablehq/runtime";
-import type { CompiledNode, RuntimeValue } from "./types";
+import type { RuntimeValue } from "./types";
+import type { CompiledNode } from "compiler";
 
 type OnChange = (id: string, value: RuntimeValue) => void;
 
@@ -43,28 +44,46 @@ export async function createRuntime(
 ) {
   const runtime = new Runtime();
   const module = runtime.module();
-  const inspectorMap: Record<string, Inspector> = {};
-  const variableMap: Record<string, Variable> = {};
+  const variableMap: Record<
+    string,
+    { hash: string; inspector: Inspector; variable: Variable }
+  > = {};
 
-  function updateNode(node: CompiledNode) {
+  async function updateNode(node: CompiledNode) {
+    console.log("updateNode", node);
+    const nodeHash = await node.compiledCodeHash();
     if (variableMap[node.codeName]) {
-      variableMap[node.codeName].delete();
+      // the node we're updating hasn't actually changed. noop
+      if (variableMap[node.codeName].hash === nodeHash) {
+        return;
+      }
+      variableMap[node.codeName].variable.delete();
     }
-    inspectorMap[node.codeName] = new Inspector(node.codeName, onChange);
-
-    console.log(node.codeName, node.compiledCode);
+    const inspector = new Inspector(node.codeName, onChange);
 
     const variable = module
-      .variable(inspectorMap[node.codeName])
+      .variable(inspector)
       .define(node.codeName, node.dependencies, eval(`(${node.compiledCode})`));
 
-    variableMap[node.codeName] = variable;
+    variableMap[node.codeName] = {
+      variable,
+      hash: nodeHash,
+      inspector,
+    };
   }
 
   for (const node of compiled) {
     updateNode(node);
   }
 
+  console.log("RUNTIME CREATED");
+  setInterval(
+    () =>
+      console.log(
+        Object.values(variableMap).map((thing) => thing.variable._value)
+      ),
+    2000
+  );
   return {
     updateNode,
   };

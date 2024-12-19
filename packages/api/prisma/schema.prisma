@@ -36,13 +36,14 @@ model ApiToken {
 }
 
 model Canvas {
-  id             String         @id @default(cuid())
-  canvasAccesses CanvasAccess[]
-  updatedAt      DateTime       @default(now())
-  createdAt      DateTime       @default(now())
-  title          String?
-  titleGenerated String?
-
+  id                   String         @id @default(cuid())
+  canvasAccesses       CanvasAccess[]
+  updatedAt            DateTime       @default(now())
+  createdAt            DateTime       @default(now())
+  title                String?
+  titleGenerated       String?
+  currentSnapshot      Json?
+  clock                Int            @default(0)
   description          String?
   descriptionGenerated String?
   snapshots            Snapshot[]
@@ -66,7 +67,8 @@ model Snapshot {
   canvasId  String
   canvas    Canvas   @relation(fields: [canvasId], references: [id])
   clock     Int
-  content   Json
+  patches   Json
+  digest    String
   createdAt DateTime @default(now())
 }
 

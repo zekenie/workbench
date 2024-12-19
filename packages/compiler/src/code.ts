@@ -35,32 +35,36 @@
 
 // Types
 import type { RoomSnapshot } from "@tldraw/sync-core";
-import type { StoreSnapshot, UnknownRecord } from "@tldraw/tldraw";
 import { ide } from "tools";
 
 type InputShape = { state: ide.IDEShape };
 
 const filterIDEShapes = (shapes: InputShape[]) => {
-  return shapes.filter((shape) => shape.state.type === "IDE");
+  return shapes.filter(
+    (shape) => shape.state.type === "IDE" && shape.state.props.title !== ""
+  );
 };
 
 const extractTypeScriptCode = (
   shapes: InputShape[]
 ): Record<string, string> => {
-  return shapes.reduce((acc, shape) => {
-    const { props } = shape.state;
+  return shapes.reduce(
+    (acc, shape) => {
+      const { props } = shape.state;
 
-    if (!props) {
+      if (!props) {
+        return acc;
+      }
+
+      // Only process if it's TypeScript
+      if (props.language === "ts") {
+        acc[props.title] = props.code;
+      }
+
       return acc;
-    }
-
-    // Only process if it's TypeScript
-    if (props.language === "ts") {
-      acc[props.title] = props.code;
-    }
-
-    return acc;
-  }, {} as Record<string, string>);
+    },
+    {} as Record<string, string>
+  );
 };
 
 export function extractCode(snapshot: RoomSnapshot) {

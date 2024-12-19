@@ -63,6 +63,7 @@ export async function startAndKeepWatchingLiveEdits({
   maxJitter?: number;
 }): Promise<void> {
   return harness.startWatchingLiveEdits().catch(async (err) => {
+    console.error(err);
     if (count < maxRetries) {
       // Calculate exponential backoff
       const exponentialDelay = baseDelay * Math.pow(2, count);

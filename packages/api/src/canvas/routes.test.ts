@@ -1,5 +1,4 @@
 import { treaty } from "@elysiajs/eden";
-import { randomUUIDv7 } from "bun";
 import { beforeEach, describe, expect, it } from "bun:test";
 import { sign } from "../auth/jwt.service";
 import { prisma } from "../db";
@@ -29,65 +28,6 @@ const configureAuthenticatedRequest = ({ jwt }: { jwt: string }) => {
 
 describe("canvases", () => {
   beforeEach(async () => {});
-
-  describe("POST /snapshot", () => {
-    it("rejects unauthenticated requests", async () => {
-      const { status } = await apiClient.canvases.snapshot.post({
-        id: randomUUIDv7(),
-        snapshot: { clock: 1 },
-      });
-      expect(status).toBe(401);
-    });
-
-    it("rejects user authenticated requests requests", async () => {
-      const { jwt } = await worldSetup();
-      const { status } = await apiClient.canvases.snapshot.post(
-        {
-          id: randomUUIDv7(),
-          snapshot: { clock: 1 },
-        },
-        {
-          ...configureAuthenticatedRequest({ jwt }),
-        }
-      );
-      expect(status).toBe(401);
-    });
-
-    it("accepts api authenticated requests and updates the canvas", async () => {
-      const { user } = await worldSetup();
-      const id = await createCanvas({ userId: user.id, title: "foobar" });
-
-      const apiToken = await prisma.apiToken.create({
-        data: {
-          tokenHash: await Bun.password.hash("foo"),
-        },
-      });
-
-      const { status } = await apiClient.canvases.snapshot.post(
-        {
-          id,
-          snapshot: { foobar: "baz", clock: 1 },
-        },
-        {
-          headers: {
-            "x-api-secret": "foo",
-            "x-api-id": apiToken.id,
-          },
-        }
-      );
-
-      expect(status).toBe(200);
-      const { content } = await prisma.snapshot.findFirstOrThrow({
-        where: { canvasId: id },
-        orderBy: {
-          clock: "desc",
-        },
-      });
-      expect(content).toMatchObject({
-        foobar: "baz",
-      });
-    });
-  });
 
   describe("GET /", () => {
     it("rejects unauthenticated requests", async () => {

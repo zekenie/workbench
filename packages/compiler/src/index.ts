@@ -28,6 +28,7 @@ export class CompiledNode {
 
   constructor(
     readonly id: string,
+    readonly codeName: string,
     readonly inputCode: string,
     readonly compiledCode: string,
     readonly dependencies: string[]
@@ -61,7 +62,7 @@ export class CompiledCanvas {
     dependencies: string[];
   }) {
     this.nodes.push(
-      new CompiledNode(id, inputCode, compiledCode, dependencies)
+      new CompiledNode(id, id, inputCode, compiledCode, dependencies)
     );
     return this;
   }
@@ -154,6 +155,7 @@ export class Compiler {
       // @ts-expect-error
       (rec) => rec.props?.title
     ) as Record<string, UnknownRecord>;
+    console.log(codeNames);
     return codeNames.reduce(
       (acc, codeName) => {
         const doc = snapshotRecordsByCodename[codeName];

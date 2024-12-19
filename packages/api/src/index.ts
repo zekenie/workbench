@@ -6,6 +6,7 @@ import { startWorker } from "./worker";
 import { auth } from "./auth/routes";
 import { canvasRoutes } from "./canvas/routes";
 import { compilerRoutes } from "./compiler/routes";
+import { snapshotRoutes } from "./snapshot/routes";
 
 export const app = new Elysia()
   .use(swagger())
@@ -13,6 +14,7 @@ export const app = new Elysia()
 
   .use(canvasRoutes)
   .use(compilerRoutes)
+  .use(snapshotRoutes)
   .use(auth)
   .listen(3000);
 

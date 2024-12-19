@@ -40,15 +40,13 @@ export async function getLatestCompiledCode({ id }: { id: string }) {
 }
 
 export async function compile({ id }: { id: string }) {
-  const { content, clock } = await prisma.snapshot.findFirstOrThrow({
+  const { currentSnapshot, clock } = await prisma.canvas.findFirstOrThrow({
     where: {
-      canvasId: id,
-    },
-    orderBy: {
-      clock: "desc",
+      id: id,
     },
   });
-  const contentTyped = content as unknown as RoomSnapshot;
+
+  const contentTyped = currentSnapshot as unknown as RoomSnapshot;
   const compiled = await compiler.compile(contentTyped);
   await prisma.$transaction(async () => {
     const { latest } = await getLatestCompiledCode({ id });

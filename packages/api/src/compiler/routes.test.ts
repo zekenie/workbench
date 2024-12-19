@@ -96,7 +96,7 @@ describe("compiler routes", () => {
         },
       });
 
-      await apiClient.canvases.snapshot.post(
+      await apiClient.snapshots.snapshot.post(
         {
           snapshot: snapshot as any,
           id: canvasId!,
