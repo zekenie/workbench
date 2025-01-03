@@ -10,9 +10,9 @@ import { compilerRoutes } from "./compiler/routes";
 import { snapshotRoutes } from "./snapshot/routes";
 import { runtimeRoutes } from "./runtime/routes";
 import { pollOutboxEvents } from "./outbox.process";
-import { registerCleanupEventHandlers } from "./lib/process-cleanup";
+import { setupProcess } from "./lib/process-cleanup";
 
-registerCleanupEventHandlers();
+setupProcess();
 
 export const app = new Elysia({
   serve: {

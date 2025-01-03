@@ -4,10 +4,10 @@ import { EventStatus } from "@prisma/client";
 import { prisma } from "./db";
 import { pubsubWithPublish } from "./lib/pubsub";
 import { Event } from "event-schemas";
-import { registerCleanupEventHandlers } from "./lib/process-cleanup";
+import { setupProcess } from "./lib/process-cleanup";
 import eventToJob from "./lib/event-to-job";
 
-registerCleanupEventHandlers();
+setupProcess();
 
 async function selectPendingEventIds() {
   // Select IDs of pending events with FOR UPDATE SKIP LOCKED
@@ -26,8 +26,6 @@ async function processOutboxEvents() {
   try {
     const events = await prisma.$transaction(async (tx) => {
       const pendingIds = await selectPendingEventIds();
-
-      console.log({ pendingIds });
 
       const events = await prisma.event.findMany({
         where: {
@@ -74,14 +72,12 @@ async function processOutboxEvents() {
           eventToJob.handleEvent(event.payload as unknown as Event),
           pubsubWithPublish.publish(event.payload as unknown as Event),
         ]);
-        console.log("event handled!");
         await prisma.event.update({
           where: { eventId: event.eventId },
           data: {
             status: EventStatus.PUBLISHED,
           },
         });
-        console.log("done with", event.eventId);
       } catch (e) {
         console.error("error while handling event in outbox", {
           error: e,

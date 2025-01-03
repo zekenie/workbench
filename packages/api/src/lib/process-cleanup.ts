@@ -18,7 +18,7 @@ const cleanup = once(async function cleanup() {
   process.exit(0);
 });
 
-export const registerCleanupEventHandlers = once(() => {
+export const setupProcess = once(() => {
   process.on("SIGTERM", cleanup);
   process.on("SIGINT", cleanup);
   process.on("uncaughtException", (err) => {

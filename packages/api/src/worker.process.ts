@@ -2,9 +2,9 @@ import faktory from "faktory-worker";
 import "./compiler/compile.job.js";
 import "./runtime/create-runtime.job.js";
 import { once } from "lodash-es";
-import { registerCleanupEventHandlers } from "./lib/process-cleanup.js";
+import { setupProcess } from "./lib/process-cleanup.js";
 
-registerCleanupEventHandlers();
+setupProcess();
 
 export const startWorker = once(async () => {
   const worker = await faktory.work();
