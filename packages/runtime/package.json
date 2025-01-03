@@ -14,9 +14,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node",
     "typecheck": "tsc --noEmit",
-    "start": "bun run ./src/index.ts"
+    "start": "bun run ./src/index.ts",
+    "docker-build": "docker build --platform linux/amd64 --build-context workspace=../.. ."
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

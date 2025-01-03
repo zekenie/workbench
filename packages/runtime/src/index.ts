@@ -3,55 +3,53 @@ import { parseArgs } from "node:util";
 import { createServer } from "./dev-server";
 import { Harness } from "./harness";
 
-// Configuration types
-type LiveEditConfig = {
-  canvasId: string;
-};
-
-type Config = {
-  liveEdit?: LiveEditConfig;
-  port?: number;
-};
-
-async function loadConfig(configPath: string): Promise<Config> {
-  try {
-    const file = Bun.file(configPath);
-    const exists = await file.exists();
-    if (!exists) {
-      return {};
-    }
-    return await file.json();
-  } catch (err) {
-    console.warn(`Warning: Failed to load config from ${configPath}:`, err);
-    return {};
-  }
-}
-
 async function main() {
-  const {
-    values: { source, config: configPath },
-  } = parseArgs({
+  const { values: config } = parseArgs({
     options: {
+      apiDomain: {
+        type: "string",
+        short: "a",
+        default: Bun.env.API_DOMAIN,
+      },
+      apiId: {
+        type: "string",
+        default: Bun.env.API_ID,
+      },
+      apiSecret: {
+        type: "string",
+        default: Bun.env.API_SECRET,
+      },
       source: {
         type: "string",
         short: "s",
-        default: "canvas.json",
+        default: Bun.env.SOURCE,
       },
-      config: {
+      canvasId: {
         type: "string",
         short: "c",
-        default: "runtime.config.json",
+        default: Bun.env.CANVAS_ID,
+      },
+      port: {
+        type: "string",
+        short: "p",
+        default: Bun.env.PORT,
       },
     },
   });
 
-  // Load config file
-  const config = await loadConfig(configPath);
+  console.log({ config });
+
+  if (!config.source) {
+    throw new Error();
+  }
 
   // Create the harness with the source file and live edit config
   const harness = new Harness({
-    sourceFile: source,
-    liveEdit: config.liveEdit,
+    source: config.source,
+    apiDomain: config.apiDomain,
+    canvasId: config.canvasId!,
+    apiId: config.apiId,
+    apiSecret: config.apiSecret,
   });
 
   // Load the initial source file
@@ -71,8 +69,8 @@ async function main() {
   });
 
   console.log(`Server started at http://localhost:${server.port}`);
-  if (config.liveEdit) {
-    console.log(`Live edit enabled for canvas: ${config.liveEdit.canvasId}`);
+  if (config.canvasId) {
+    console.log(`Live edit enabled for canvas: ${config.canvasId}`);
   }
 
   // Handle server shutdown

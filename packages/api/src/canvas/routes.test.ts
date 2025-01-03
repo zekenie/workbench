@@ -1,20 +1,25 @@
 import { treaty } from "@elysiajs/eden";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { sign } from "../auth/jwt.service";
 import { prisma } from "../db";
 import { canvasRoutes } from "./routes";
 import { createCanvas } from "./service";
+import { randomUUIDv7 } from "bun";
 
 const apiClient = treaty(canvasRoutes);
 
 async function worldSetup() {
-  const user = await prisma.user.create({
-    data: {
-      email: `${Math.random()}@foo.com`,
-    },
-  });
+  const userId = randomUUIDv7();
+  const [user, jwt] = await Promise.all([
+    prisma.user.create({
+      data: {
+        id: userId,
+        email: `${Math.random()}@foo.com`,
+      },
+    }),
+    sign(userId),
+  ]);
 
-  const jwt = await sign(user.id);
   return { jwt, user };
 }
 
@@ -27,8 +32,6 @@ const configureAuthenticatedRequest = ({ jwt }: { jwt: string }) => {
 };
 
 describe("canvases", () => {
-  beforeEach(async () => {});
-
   describe("GET /", () => {
     it("rejects unauthenticated requests", async () => {
       const { status } = await apiClient.canvases.list.get({

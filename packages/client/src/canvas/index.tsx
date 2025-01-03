@@ -7,13 +7,14 @@ import {
 } from "@tldraw/tldraw";
 import { useSync } from "@tldraw/sync";
 import React, { useCallback, useMemo } from "react";
-import "tldraw/tldraw.css";
-
+import { useParams } from "react-router-dom";
+import { useAuth } from "@/auth/provider";
 import { IDEUtil } from "./tools/IDE/util";
 import { components, staticAssets, uiOverrides } from "./ui-overrides";
 import { IDEShapeTool } from "./tools/IDE/tool";
 import { DependencyGraphProvider } from "@/runtime";
-import { useParams } from "react-router-dom";
+import { RuntimeControlToolbar } from "@/runtime/toolbar";
+import { useRuntimeStateManager } from "@/runtime/toolbar/state";
 
 export const customShapeUtils = [IDEUtil];
 export const customTools = [IDEShapeTool];
@@ -21,7 +22,6 @@ export const customTools = [IDEShapeTool];
 const myAssetStore: TLAssetStore = {
   async upload(file, asset) {
     return "";
-    // return uploadFileAndReturnUrl(file)
   },
   resolve(asset) {
     return "";
@@ -29,48 +29,40 @@ const myAssetStore: TLAssetStore = {
 };
 
 const Canvas: React.FC = () => {
-  // const dependencies = useDependencyGraph({ editor });
-  //
-  // console.log({ dependencies });
   const { id } = useParams<{ id: string }>();
+  const { client } = useAuth();
+
   const store = useSync({
     shapeUtils: useMemo(() => [...defaultShapeUtils, ...customShapeUtils], []),
     bindingUtils: defaultBindingUtils,
     uri: `ws://localhost:5858/connect/${id}`,
-
     assets: myAssetStore,
   });
 
+  const { vmState, handleVMAction } = useRuntimeStateManager(client, id!);
+
   const onMount = useCallback((editor: Editor) => {
-    // editor.createShape({
-    //   type: "IDE",
-    //   x: 100,
-    //   y: 100,
-    //   props: {
-    //     title: "foobar",
-    //     code: "",
-    //     private: true,
-    //     language: "ts",
-    //   },
-    // });
+    // Mount logic here if needed
   }, []);
 
   return (
-    <div className="tldraw__editor">
-      <DependencyGraphProvider store={store}>
-        <Tldraw
-          // persistenceKey="fosdfobar"
-          shapeUtils={customShapeUtils}
-          tools={customTools}
-          store={store}
-          onMount={onMount}
-          deepLinks
-          overrides={uiOverrides}
-          components={components}
-          assetUrls={staticAssets}
-        ></Tldraw>
-      </DependencyGraphProvider>
-    </div>
+    <>
+      <RuntimeControlToolbar state={vmState} onAction={handleVMAction} />
+      <div className="tldraw__editor">
+        <DependencyGraphProvider store={store}>
+          <Tldraw
+            shapeUtils={customShapeUtils}
+            tools={customTools}
+            store={store}
+            onMount={onMount}
+            deepLinks
+            overrides={uiOverrides}
+            components={components}
+            assetUrls={staticAssets}
+          />
+        </DependencyGraphProvider>
+      </div>
+    </>
   );
 };
 

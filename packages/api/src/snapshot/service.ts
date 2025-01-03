@@ -41,7 +41,7 @@ export async function updateSnapshot({
     });
 
     await prisma.canvas.update({
-      data: { currentSnapshot: snapshot as any },
+      data: { currentSnapshot: snapshot as any, clock: snapshot.clock },
       where: { id },
     });
     return snap;

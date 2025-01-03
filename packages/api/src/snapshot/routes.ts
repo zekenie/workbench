@@ -3,9 +3,13 @@ import { Operation } from "fast-json-patch";
 import { last } from "lodash-es";
 import { authMiddleware } from "../auth/middleware";
 import { prisma } from "../db";
-import { faktoryClient } from "../jobs";
-import pubsub from "../pubsub";
+import { faktoryClient } from "../lib/jobs";
+import pubsub, { publish } from "../lib/pubsub";
 import { updateSnapshot } from "./service";
+import { EventEmitter, on } from "node:events";
+import { createTicker } from "../lib/ticker";
+
+const ticket = createTicker(1000);
 
 type PatchEvents =
   | {
@@ -15,6 +19,9 @@ type PatchEvents =
   | {
       type: "patch";
       patch: Operation;
+    }
+  | {
+      type: "tick";
     };
 
 export const snapshotRoutes = new Elysia({
@@ -77,10 +84,14 @@ export const snapshotRoutes = new Elysia({
         currentClock = last(snapshotRecords)!.clock;
       }
 
-      const iterator = pubsub.crossSubscribeIterator("canvasId", query.id);
+      const emitter = new EventEmitter().on("tick", () => {});
 
-      // now subscribe to realtime changes
-      for await (const message of iterator) {
+      // heartbeat
+      ticket.on("tick", () => {
+        emitter.emit("message", { type: "tick" });
+      });
+
+      pubsub.crossSubscribe("canvasId", query.id, async (message) => {
         if (message.event === "canvas.snapshot") {
           const snap = await prisma.snapshot.findFirst({
             where: {
@@ -94,15 +105,24 @@ export const snapshotRoutes = new Elysia({
               canvasId: query.id,
               clock: message.clock,
             });
-            continue;
+            return;
           }
 
           for (const op of snap.patches as unknown as Operation[]) {
-            yield { type: "patch", patch: op };
+            emitter.emit("message", { type: "patch", patch: op });
           }
-          yield { type: "digest", digest: snap.digest };
+          emitter.emit("message", { type: "digest", digest: snap.digest });
         }
+      });
+
+      for await (const message of on(emitter, "message")) {
+        yield message as unknown as PatchEvents;
       }
+      // const iterator = pubsub.crossSubscribeIterator("canvasId", query.id);
+
+      // now subscribe to realtime changes
+      // for await (const message of iterator) {
+      // }
     },
     {
       auth: "api",
@@ -138,16 +158,13 @@ export const snapshotRoutes = new Elysia({
   .post(
     "/snapshot",
     async ({ body }) => {
-      console.log("new snap");
       const { canvasId, clock, digest } = await updateSnapshot({
         id: body.id,
         snapshot: body.snapshot as any,
       });
 
-      console.log("new snap", { canvasId, clock, digest });
-
       await faktoryClient.job("canvas.compile", { id: body.id }).push();
-      await pubsub.publish({
+      await publish({
         event: "canvas.snapshot",
         canvasId,
         clock,

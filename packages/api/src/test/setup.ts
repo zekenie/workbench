@@ -1,12 +1,62 @@
 import { PrismaClient } from "@prisma/client";
-import { beforeAll, beforeEach, afterAll } from "bun:test";
+import { afterAll, beforeAll, beforeEach, mock } from "bun:test";
+import { faktoryClient } from "../lib/jobs";
+import { HttpCollector } from "./http-collector";
 
 const prisma = new PrismaClient();
+export const httpCollector = new HttpCollector();
+
+type RequestCallback = (res: any) => void;
+
+mock.module("http", () => {
+  const http = require("http");
+  return {
+    ...http,
+    request: (url: string | URL, options?: any, callback?: RequestCallback) => {
+      const req = http.request(url, options, callback);
+
+      req.on("finish", async () => {
+        const urlObj = new URL(url.toString());
+        httpCollector.capture({
+          url: urlObj.toString(),
+          path: urlObj.pathname,
+          query: Object.fromEntries(urlObj.searchParams),
+          method: options?.method || "GET",
+          headers: options?.headers || {},
+          body: options?.body || null,
+        });
+      });
+
+      return req;
+    },
+  };
+});
+
+// Mock global fetch
+globalThis.fetch = new Proxy(globalThis.fetch, {
+  apply: async (target, thisArg, [url, init]) => {
+    const urlObj = new URL(url.toString());
+    httpCollector.capture({
+      url: urlObj.toString(),
+      path: urlObj.pathname,
+      query: Object.fromEntries(urlObj.searchParams),
+      method: init?.method || "GET",
+      headers: init?.headers || {},
+      body: init?.body || null,
+    });
+    return target.apply(thisArg, [url, init]);
+  },
+});
 
 beforeAll(async () => {
   // Any one-time setup
 });
 
+beforeEach(() => {
+  httpCollector.clear();
+});
+
+beforeEach(() => faktoryClient.connect());
 beforeEach(async () => {
   try {
     // Get all tables

@@ -8,6 +8,7 @@ import {
   TLComponents,
   TldrawUiMenuItem,
   TLUiOverrides,
+  ToolbarItem,
   useIsToolSelected,
   useTools,
 } from "@tldraw/tldraw";

@@ -58,8 +58,8 @@ class Ticker extends EventEmitter implements Disposable {
   }
 }
 
-function ticker(ms: number): Ticker {
+function createTicker(ms: number): Ticker {
   return new Ticker(ms);
 }
 
-export { ticker, Ticker };
+export { createTicker, Ticker };

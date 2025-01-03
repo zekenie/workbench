@@ -36,17 +36,33 @@ model ApiToken {
 }
 
 model Canvas {
-  id                   String         @id @default(cuid())
+  id                   String              @id @default(cuid())
   canvasAccesses       CanvasAccess[]
-  updatedAt            DateTime       @default(now())
-  createdAt            DateTime       @default(now())
+  updatedAt            DateTime            @default(now())
+  createdAt            DateTime            @default(now())
   title                String?
   titleGenerated       String?
   currentSnapshot      Json?
-  clock                Int            @default(0)
+  clock                Int                 @default(0)
   description          String?
   descriptionGenerated String?
   snapshots            Snapshot[]
+  canvasEnvironment    CanvasEnvironment[]
+}
+
+model CanvasEnvironment {
+  id        String   @id @default(cuid())
+  updatedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  machineId String   @unique
+  appId     String
+  volumeId  String
+  region    String
+  type      String
+  canvas    Canvas   @relation(fields: [canvasId], references: [id])
+  canvasId  String
+
+  @@unique([type, canvasId])
 }
 
 model CanvasAccess {
@@ -85,4 +101,23 @@ model CodeNode {
   updatedAt        DateTime @default(now())
   dependencies     String[]
   clock            Int
+}
+
+enum EventStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+model Event {
+  eventId    String      @id
+  timestamp  DateTime
+  event      String
+  payload    Json
+  status     EventStatus @default(PENDING)
+  retryCount Int         @default(0)
+  lastError  String?
+
+  @@index([status, timestamp(sort: Asc)], map: "idx_outbox_status_timestamp")
 }

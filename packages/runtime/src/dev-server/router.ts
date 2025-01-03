@@ -37,6 +37,11 @@ export async function router(
   // Route handlers
   const routes: Record<RouteKey, (req: Request) => Promise<Response>> = {
     "GET /events": () => handleEventsRoute(req, harness),
+    "GET /health": async () => {
+      return new Response(null, {
+        status: 200,
+      });
+    },
     // Add new routes here in the format "METHOD /path"
   };
 

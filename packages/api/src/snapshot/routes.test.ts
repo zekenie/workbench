@@ -3,7 +3,7 @@ import { randomUUIDv7 } from "bun";
 import { beforeEach, describe, expect, it } from "bun:test";
 import { sign } from "../auth/jwt.service";
 import { prisma } from "../db";
-import { app } from "../index";
+import { app } from "../index.process";
 import { createCanvas } from "../canvas/service";
 
 const apiClient = treaty(app);
@@ -128,7 +128,7 @@ describe("snapshots", () => {
 
       // insert some initial data
       for (const num of [1, 2, 3]) {
-        await apiClient.snapshots.snapshot.post(
+        const { status } = await apiClient.snapshots.snapshot.post(
           {
             snapshot: {
               clock: num,
@@ -143,10 +143,12 @@ describe("snapshots", () => {
             },
           }
         );
+
+        expect(status).toEqual(200);
       }
 
       const abortController = new AbortController();
-      const { data: streamData } = await apiClient.snapshots[
+      const { data: streamData, status } = await apiClient.snapshots[
         "snapshot-stream"
       ].get({
         fetch: {
@@ -159,18 +161,18 @@ describe("snapshots", () => {
         },
       });
 
+      expect(status).toEqual(200);
+
       if (!streamData || !("next" in streamData)) {
         throw new Error("no stream");
       }
-      const patches = await collectNPatches(streamData, 9);
+      const patches = await collectNPatches(streamData, 7);
 
       expect(patches).toEqual([
         { type: "patch", patch: { op: "add", path: "/clock", value: 1 } },
         { type: "patch", patch: { op: "add", path: "/other", value: 1 } },
-        { type: "digest", digest: expect.any(String) },
         { type: "patch", patch: { op: "replace", path: "/other", value: 2 } },
         { type: "patch", patch: { op: "replace", path: "/clock", value: 2 } },
-        { type: "digest", digest: expect.any(String) },
         { type: "patch", patch: { op: "replace", path: "/other", value: 3 } },
         { type: "patch", patch: { op: "replace", path: "/clock", value: 3 } },
         { type: "digest", digest: expect.any(String) },

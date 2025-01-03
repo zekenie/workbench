@@ -1,44 +1,42 @@
 import { CompiledCanvas, CompiledNode, Compiler } from "compiler";
-import { backendClient, createAuthenticatedClient } from "./backend";
+import { createAuthenticatedClient } from "./backend";
 import { SourceFile } from "./source-file";
 import type { RuntimeValue } from "./types";
 import { EventEmitter, on } from "events";
 import { createRuntime } from "./runtime";
 
-type LiveEditConfig = {
-  canvasId: string;
-};
-
 type RuntimeConfig = {
-  // initial file?
-  liveEdit?: LiveEditConfig;
+  canvasId?: string;
+  apiId?: string;
+  apiSecret?: string;
+  apiDomain?: string;
   onValueChange?: (id: string, value: RuntimeValue) => void;
-  sourceFile: string;
+  source: string;
 };
 
 export class Harness {
   private emitter: EventEmitter = new EventEmitter();
   private updateNode?: (node: CompiledNode) => void;
-  private sourceFile: SourceFile;
+  private source: SourceFile;
   private compiler: Compiler = new Compiler();
   private compiledCanvas?: CompiledCanvas;
   values: Record<string, RuntimeValue> = {};
 
   constructor(private readonly config: RuntimeConfig) {
-    this.sourceFile = new SourceFile({ path: this.config.sourceFile });
+    this.source = new SourceFile({ path: this.config.source });
   }
 
   get clock() {
-    return this.sourceFile.snapshot.clock;
+    return this.source.snapshot.clock;
   }
 
   private async digestsMatch(digest: string) {
-    console.log(await this.sourceFile.hash, digest);
-    return (await this.sourceFile.hash) === digest;
+    console.log(await this.source.hash, digest);
+    return (await this.source.hash) === digest;
   }
 
   async load() {
-    await this.sourceFile.load();
+    await this.source.load();
 
     const compiled = await this.compile();
 
@@ -53,9 +51,7 @@ export class Harness {
 
   async compile() {
     try {
-      const compiledCanvas = await this.compiler.compile(
-        this.sourceFile.snapshot
-      );
+      const compiledCanvas = await this.compiler.compile(this.source.snapshot);
       this.compiledCanvas = compiledCanvas;
       return compiledCanvas;
     } catch (e) {
@@ -64,18 +60,30 @@ export class Harness {
   }
 
   async startWatchingLiveEdits() {
-    if (!this.config.liveEdit) {
+    console.log("harness config", this.config);
+    if (!this.config.apiDomain) {
       return;
     }
-    console.log("Making watch request", {
-      id: this.config.liveEdit.canvasId,
-      clock: this.clock,
-    });
+    if (!this.config.canvasId) {
+      return;
+    }
+
+    if (!this.config.apiId) {
+      return;
+    }
+
+    if (!this.config.apiSecret) {
+      return;
+    }
+
+    console.log("passed gates");
+
     const { data, status, error } = await createAuthenticatedClient(
-      process.env.API_ID,
-      process.env.API_SECRET
+      this.config.apiId,
+      this.config.apiSecret,
+      this.config.apiDomain
     ).snapshots["snapshot-stream"].get({
-      query: { id: this.config.liveEdit.canvasId, clock: this.clock },
+      query: { id: this.config.canvasId, clock: this.clock },
     });
     if (!data) {
       console.log({ data, status, error: error.value });
@@ -103,7 +111,7 @@ export class Harness {
             }
           }
 
-          await this.sourceFile.save();
+          await this.source.save();
           try {
             await this.compile();
           } catch (e) {
@@ -113,7 +121,7 @@ export class Harness {
           this.emitter.emit("digest", { digest: chunk.digest });
           break;
         case "patch":
-          this.sourceFile.patch([chunk.patch]);
+          this.source.patch([chunk.patch]);
           break;
       }
     }

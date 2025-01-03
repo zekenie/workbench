@@ -15,6 +15,7 @@ import SignupPage from "./auth/signup/page";
 import { AuthProvider, useAuth } from "./auth/provider";
 import { FC } from "react";
 import { CanvasListPage } from "./canvas-list/page";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 const queryClient = new QueryClient();
 
@@ -93,7 +94,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

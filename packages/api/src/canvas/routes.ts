@@ -1,6 +1,6 @@
 import Elysia, { t } from "elysia";
 import { authMiddleware } from "../auth/middleware";
-import { offsetPaginationModel } from "../util/pagination/offset.model";
+import { offsetPaginationModel } from "../lib/pagination/offset.model";
 import { countCanvases, createCanvas, listCanvases } from "./service";
 
 const canvasPagination = offsetPaginationModel(

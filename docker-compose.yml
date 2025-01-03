@@ -52,6 +52,13 @@ services:
       timeout: 5s
       retries: 3
 
+  mock-fly:
+    image: stoplight/prism:5
+    platform: linux/amd64
+    command: mock -h 0.0.0.0 https://machines-api-spec.fly.dev/swagger/doc.json
+    ports:
+      - "4010:4010"
+
 volumes:
   postgres_data:
   redis-data:

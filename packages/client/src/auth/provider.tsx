@@ -10,7 +10,7 @@ import React, {
 import { authReducer, initialState, PossibleStates } from "./state";
 import { jwtDecode } from "jwt-decode";
 import { treaty, Treaty } from "../../../../node_modules/@elysiajs/eden";
-import type { App } from "../../../api/src/";
+import type { App } from "../../../api/src/index.process";
 
 type Credentials = {
   email: string;

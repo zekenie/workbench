@@ -3,8 +3,8 @@ import { treaty } from "@elysiajs/eden";
 import { prisma } from "../db";
 import { sign } from "../auth/jwt.service";
 import { snapshot } from "../canvas/fixtures/snapshot";
-import { startWorker } from "../worker";
-import { app } from "../index";
+import { startWorker } from "../worker.process";
+import { app } from "../index.process";
 
 const apiClient = treaty(app);
 

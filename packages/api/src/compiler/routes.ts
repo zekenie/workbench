@@ -5,7 +5,7 @@ import {
   getCompiledCodeDiff,
 } from "./service";
 import { authMiddleware } from "../auth/middleware";
-import pubsub from "../pubsub";
+import pubsub from "../lib/pubsub";
 
 type CompiledEvents =
   | {

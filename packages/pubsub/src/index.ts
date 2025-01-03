@@ -3,7 +3,7 @@ import { z } from "zod";
 import { EventEmitter } from "events";
 
 // Helper type to extract event type from schema
-type EventType<T> = T extends z.ZodType<infer U> ? U : never;
+export type EventType<T> = T extends z.ZodType<infer U> ? U : never;
 
 // New type for cross-publish configuration
 type CrossPublishConfig = {

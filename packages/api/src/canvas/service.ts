@@ -1,5 +1,6 @@
 import { randomUUIDv7 } from "bun";
 import { prisma } from "../db";
+import pubsub, { publish } from "../lib/pubsub";
 
 export async function createCanvas({
   userId,
@@ -10,7 +11,7 @@ export async function createCanvas({
   title?: string;
   description?: string;
 }) {
-  return prisma.$transaction(async () => {
+  const canvasId = await prisma.$transaction(async () => {
     const canvas = await prisma.canvas.create({
       data: {
         id: randomUUIDv7(),
@@ -28,6 +29,37 @@ export async function createCanvas({
 
     return canvas.id;
   });
+
+  await publish({
+    event: "canvas.create",
+    canvasId,
+  });
+
+  return canvasId;
+}
+
+export async function hasAccess({
+  userId,
+  canvasId,
+}: {
+  userId: string;
+  canvasId: string;
+}) {
+  const access = await prisma.canvasAccess.findFirst({
+    where: {
+      userId: userId,
+      canvasId: canvasId,
+    },
+    include: {
+      canvas: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  return !!access;
 }
 
 export async function findMyCanvas({
