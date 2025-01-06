@@ -1,5 +1,4 @@
 import faktory from "faktory-worker";
-import "./compiler/compile.job.js";
 import "./runtime/create-runtime.job.js";
 import { once } from "lodash-es";
 import { setupProcess } from "./lib/process-cleanup.js";

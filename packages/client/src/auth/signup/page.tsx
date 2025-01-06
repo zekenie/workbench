@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useCallback, useEffect } from "react";
 
 export default function SignupPage() {
-  const { state, signup } = useAuth();
+  const { isLoading, isAuthenticated, signup } = useAuth();
 
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,14 +33,14 @@ export default function SignupPage() {
 
   const navigate = useNavigate();
   useEffect(() => {
-    if (state === "loading") {
+    if (isLoading) {
       return;
     }
 
-    if (state === "authenticated") {
+    if (isAuthenticated) {
       navigate("/canvases");
     }
-  }, [state, navigate]);
+  }, [isLoading, isAuthenticated, navigate]);
   return (
     <Form onSubmit={onSubmit}>
       <Card className="mx-auto max-w-sm">

@@ -13,7 +13,7 @@ import { useCallback, useEffect } from "react";
 import { useAuth } from "../provider";
 
 export default function LoginPage() {
-  const { login, state } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -32,14 +32,14 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
   useEffect(() => {
-    if (state === "loading") {
+    if (isLoading) {
       return;
     }
 
-    if (state === "authenticated") {
+    if (isAuthenticated) {
       navigate("/canvases");
     }
-  }, [state, navigate]);
+  }, [isLoading, isAuthenticated, navigate]);
   return (
     <Form onSubmit={onSubmit}>
       <Card className="mx-auto max-w-sm">

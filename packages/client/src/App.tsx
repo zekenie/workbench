@@ -13,7 +13,7 @@ import Canvas from "./canvas";
 import LoginPage from "./auth/login/page";
 import SignupPage from "./auth/signup/page";
 import { AuthProvider, useAuth } from "./auth/provider";
-import { FC } from "react";
+import { FC, useEffect, useRef } from "react";
 import { CanvasListPage } from "./canvas-list/page";
 import { TooltipProvider } from "./components/ui/tooltip";
 
@@ -23,23 +23,23 @@ const Route: FC<{ requiresAuth?: boolean; children: React.ReactNode }> = ({
   requiresAuth,
   children,
 }) => {
-  const { state } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log("we are in route", state);
-
-  if (requiresAuth) {
-    if (state === "loading" || state === "stale") {
-      return <>Stale auth</>;
-    }
-    if (state !== "authenticated") {
+  useEffect(() => {
+    if (requiresAuth && !isAuthenticated && !isLoading) {
       navigate(`/login?then=${location.pathname}`);
-
-      return null;
     }
+  }, [requiresAuth, isAuthenticated, isLoading, navigate, location.pathname]);
+
+  // If we require auth and we're loading, show loading
+  if (requiresAuth && isLoading) {
+    return <>loading</>;
   }
 
+  // We either don't require auth or we are authenticated
+  // (the navigation will happen in the effect)
   return <>{children}</>;
 };
 

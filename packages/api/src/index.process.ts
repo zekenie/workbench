@@ -6,7 +6,6 @@ import { logger } from "@bogeychan/elysia-logger";
 
 import { auth } from "./auth/routes";
 import { canvasRoutes } from "./canvas/routes";
-import { compilerRoutes } from "./compiler/routes";
 import { snapshotRoutes } from "./snapshot/routes";
 import { runtimeRoutes } from "./runtime/routes";
 import { pollOutboxEvents } from "./outbox.process";
@@ -25,7 +24,6 @@ export const app = new Elysia({
 
   .use(canvasRoutes)
   .use(runtimeRoutes)
-  .use(compilerRoutes)
   .use(snapshotRoutes)
   .use(auth)
   .listen(3000);

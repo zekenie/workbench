@@ -163,7 +163,6 @@ export const snapshotRoutes = new Elysia({
         snapshot: body.snapshot as any,
       });
 
-      await faktoryClient.job("canvas.compile", { id: body.id }).push();
       await publish({
         event: "canvas.snapshot",
         canvasId,

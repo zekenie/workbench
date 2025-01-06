@@ -1,26 +1,19 @@
+import { treaty } from "../../../../node_modules/@elysiajs/eden";
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useReducer,
-  useRef,
 } from "react";
-import { authReducer, initialState, PossibleStates } from "./state";
-import { jwtDecode } from "jwt-decode";
-import { treaty, Treaty } from "../../../../node_modules/@elysiajs/eden";
 import type { App } from "../../../api/src/index.process";
+import tokenManager from "./token-manager";
+import { ClientType } from "@/backend";
 
 type Credentials = {
   email: string;
   password: string;
 };
-
-type ClientType = Treaty.Create<App>;
-
-class UnexpectedlyUnauthenticatedError extends Error {}
-class UnexpectedlyAuthenticatedError extends Error {}
 
 type SessionMethods = {
   login: (credentials: Credentials) => Promise<void>;
@@ -28,18 +21,12 @@ type SessionMethods = {
   logout: () => void;
 };
 
-type AuthContextType = (
-  | PossibleStates["Unauthenticated"]
-  | PossibleStates["Failed"]
-  | PossibleStates["Loading"]
-  | PossibleStates["Authenticated"]
-  | PossibleStates["Stale"]
-) & { client: ClientType } & SessionMethods;
-
-const STORAGE_KEY = {
-  jwt: "auth_jwt",
-  refreshToken: "auth_refresh",
-} as const;
+type AuthContextType = {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  client: ClientType;
+} & SessionMethods;
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -55,7 +42,7 @@ export function useAuth() {
 export function useAuthenticated() {
   const context = useAuth();
 
-  if (context.state !== "authenticated") {
+  if (!context.isAuthenticated) {
     // navigate("/login");
     // return;
     window.location.href = "/login";
@@ -66,160 +53,131 @@ export function useAuthenticated() {
   return context;
 }
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+type AuthState = {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+};
 
-  const decodedJwt = useMemo(() => {
-    if (!state.jwt) {
-      return null;
-    }
-    return jwtDecode(state.jwt);
-  }, [state.jwt]);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = React.useState<AuthState>({
+    isAuthenticated: false,
+    isLoading: true,
+    error: null,
+  });
 
-  const isExpired = useCallback(
-    (time: number = Date.now()) => {
-      if (!decodedJwt) {
-        return false;
-      }
-      return decodedJwt.exp && time >= decodedJwt.exp * 1000;
-    },
-    [decodedJwt]
-  );
+  // Authentication methods
+  const login = useCallback(
+    async (credentials: Credentials) => {
+      try {
+        setState((prev) => ({ ...prev, isLoading: true, error: null }));
+        const res = await tokenManager.client.auth.login.post(credentials);
 
-  const backendClient: ClientType = useMemo(() => {
-    return treaty<App>("http://localhost:3000", {
-      onRequest(path) {
-        if (isExpired()) {
-          if (state.state !== "stale") {
-            dispatch({ type: "tokenExpired" });
-          }
-
-          // allow auth reqs to go through, but abort all others
-          if (!path.startsWith("/auth")) {
-            return {
-              signal: AbortSignal.abort("jwt expired"),
-            };
-          }
+        if (res.error) {
+          throw new Error(res.error.value.message);
         }
 
-        return {};
-      },
-      headers() {
-        return {
-          authorization: state.jwt ? `Bearer ${state.jwt}` : "",
-        };
-      },
-    });
-  }, [state.jwt, isExpired, state.state]);
-
-  const refresh = useCallback(async () => {
-    console.trace("about to refetch");
-    if (!state.refreshToken) {
-      return;
-    }
-    try {
-      dispatch({ type: "refresh" });
-      const response = await backendClient.auth.refresh.post({
-        refreshToken: state.refreshToken,
-      });
-      if (response.data) {
-        dispatch({ type: "tokenObtained", payload: response.data });
-      }
-    } catch (error) {
-      dispatch({ type: "error", payload: "Token refresh failed" });
-    }
-  }, [state, backendClient]);
-
-  useEffect(
-    function refreshOnExpired() {
-      if (state.refreshToken && state.state === "stale") {
-        console.log("refreshOnExpired");
-        refresh().catch((err) => {
-          console.error("ffffailed to refresh");
-          console.error(err);
+        tokenManager.setTokens(res.data.jwt, res.data.refreshToken);
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+      } catch (error) {
+        setState({
+          isAuthenticated: false,
+          isLoading: false,
+          error: error instanceof Error ? error.message : "Login failed",
         });
       }
     },
-    [state.refreshToken, state.state]
+    [tokenManager]
   );
 
-  useEffect(
-    function loadTokensFromStorageOnMount() {
-      const jwt = localStorage.getItem(STORAGE_KEY.jwt);
-      const refreshToken = localStorage.getItem(STORAGE_KEY.refreshToken);
+  const signup = useCallback(
+    async (credentials: Credentials) => {
+      try {
+        setState((prev) => ({ ...prev, isLoading: true, error: null }));
+        const res = await tokenManager.client.auth.signup.post(credentials);
 
-      if (jwt && refreshToken && state.state === "unauthenticated") {
-        dispatch({ type: "tokenObtained", payload: { jwt, refreshToken } });
-        refresh();
-      }
-    },
-    [refresh, state]
-  );
-
-  const signup = useCallback(async (credentials: Credentials) => {
-    const res = await backendClient.auth.signup.post(credentials);
-    if (res.error) {
-      return dispatch({ type: "error", payload: res.error.value.message });
-    }
-    dispatch({ type: "tokenObtained", payload: res.data });
-  }, []);
-
-  const login = useCallback(async (credentials: Credentials) => {
-    const res = await backendClient.auth.login.post(credentials);
-    if (res.error) {
-      return dispatch({ type: "error", payload: res.error.value.message });
-    }
-    dispatch({ type: "tokenObtained", payload: res.data });
-  }, []);
-
-  const refreshInterval = useRef<number>();
-  useEffect(() => {
-    if (state.jwt && state.refreshToken) {
-      refreshInterval.current = window.setInterval(refresh, 5 * 60 * 1000);
-
-      return () => {
-        if (refreshInterval.current) {
-          clearInterval(refreshInterval.current);
+        if (res.error) {
+          throw new Error(res.error.value.message);
         }
-      };
-    }
-  }, [refresh, state.jwt, state.refreshToken]);
 
-  useEffect(
-    function syncLocalStorage() {
-      if (state.jwt) {
-        window.localStorage.setItem(STORAGE_KEY.jwt, state.jwt);
-      }
-
-      if (state.refreshToken) {
-        window.localStorage.setItem(
-          STORAGE_KEY.refreshToken,
-          state.refreshToken
-        );
+        tokenManager.setTokens(res.data.jwt, res.data.refreshToken);
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+      } catch (error) {
+        setState({
+          isAuthenticated: false,
+          isLoading: false,
+          error: error instanceof Error ? error.message : "Signup failed",
+        });
       }
     },
-    [state.jwt, state.refreshToken]
+    [tokenManager]
   );
 
   const logout = useCallback(() => {
-    dispatch({ type: "logout" });
-    window.localStorage.removeItem(STORAGE_KEY.refreshToken);
-    window.localStorage.removeItem(STORAGE_KEY.jwt);
+    tokenManager.clearTokens();
+    setState({
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+    });
   }, []);
 
-  const contextValue: AuthContextType = useMemo(() => {
-    return {
+  // Initial auth check
+  // Initial auth check
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        if (!tokenManager.jwt) {
+          setState({
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+          });
+          return;
+        }
+
+        if (tokenManager.expired) {
+          await tokenManager.refreshTokens();
+        }
+
+        // If we get here, we either have a valid token or just refreshed it
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+      } catch (error) {
+        setState({
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
       ...state,
       login,
       signup,
       logout,
-      client: backendClient,
-    };
-  }, [state]);
+      client: tokenManager.client,
+    }),
+    [state, login, signup, logout]
+  );
 
   return (
     <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
-};
+}

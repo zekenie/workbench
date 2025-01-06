@@ -15,15 +15,18 @@ function useCanvases() {
 
   const auth = useAuthenticated();
 
+  console.log({ auth });
+
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: ["canvases", page, take],
-    queryFn: () =>
-      auth?.client.canvases.list.get({
+    queryFn: () => {
+      return auth?.client.canvases.list.get({
         query: {
           skip: page * take,
           take,
         },
-      }),
+      });
+    },
   });
 
   const createCanvas = useCallback(
@@ -62,6 +65,7 @@ export const CanvasListPage = () => {
   console.log({ data, error, isLoading });
 
   if (error) {
+    console.error(error);
     return (
       <Alert variant="destructive">
         <ExclamationTriangleIcon className="h-4 w-4" />
