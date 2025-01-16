@@ -1,4 +1,5 @@
 import "./App.css";
+import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import {
@@ -95,6 +96,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <Toaster />
           <RouterProvider router={router} />
         </TooltipProvider>
       </AuthProvider>
