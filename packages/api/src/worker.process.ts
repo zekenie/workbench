@@ -3,9 +3,8 @@ import "./runtime/create-runtime.job.js";
 import { once } from "lodash-es";
 import { setupProcess } from "./lib/process-cleanup.js";
 
-setupProcess();
-
-export const startWorker = once(async () => {
+export const startProcess = once(async () => {
+  setupProcess();
   const worker = await faktory.work();
 
   worker.on("error", () => {

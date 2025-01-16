@@ -4,7 +4,6 @@ import {
   createApp,
   createMachine,
   createVolume,
-  configureEnv,
   slugifyIdentifier,
   Identifier,
   getMachineInfo,
@@ -49,10 +48,6 @@ export class RuntimeMachine {
     const identifier = { canvasId, envType };
     const app = await createApp({
       orgSlug: Bun.env.FLY_ORG_SLUG,
-      identifier: identifier,
-    });
-
-    await configureEnv({
       identifier: identifier,
     });
 
@@ -113,19 +108,29 @@ export class RuntimeMachine {
   }
 
   async start() {
-    const { appId, machineId } = await this.findEnvRecord();
-    await flyApi.apps.machinesStart(appId, machineId);
+    const { machineId } = await this.findEnvRecord();
+    await flyApi.apps.machinesStart(
+      slugifyIdentifier(this.identifier),
+      machineId
+    );
   }
 
   async stop() {
-    const { appId, machineId } = await this.findEnvRecord();
-    await flyApi.apps.machinesStop(appId, machineId, {
-      signal: "SIGTERM",
-    });
+    const { machineId } = await this.findEnvRecord();
+    await flyApi.apps.machinesStop(
+      slugifyIdentifier(this.identifier),
+      machineId,
+      {
+        signal: "SIGTERM",
+      }
+    );
   }
 
   async suspend() {
-    const { appId, machineId } = await this.findEnvRecord();
-    await flyApi.apps.machinesSuspend(appId, machineId);
+    const { machineId } = await this.findEnvRecord();
+    await flyApi.apps.machinesSuspend(
+      slugifyIdentifier(this.identifier),
+      machineId
+    );
   }
 }

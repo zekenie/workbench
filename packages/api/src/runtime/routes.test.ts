@@ -7,6 +7,7 @@ import { createCanvas } from "../canvas/service";
 import { randomUUIDv7 } from "bun";
 import { httpCollector } from "../test/setup";
 import { RequestQuery } from "../test/http-collector";
+import { Identifier, slugifyIdentifier } from "./create-machine-helpers";
 
 const apiClient = treaty(runtimeRoutes);
 
@@ -80,10 +81,17 @@ describe("/machines", () => {
             }
           );
 
+          const identifier: Identifier = {
+            canvasId,
+            envType: env.type,
+          };
+
           const outgoingRequest = httpCollector.getRequest(
             new RequestQuery()
               .to(Bun.env.FLY_API_URL)
-              .path(`/apps/${env.appId}/machines/${env.machineId}/${verb}`)
+              .path(
+                `/apps/${slugifyIdentifier(identifier)}/machines/${env.machineId}/${verb}`
+              )
               .method("POST")
           );
 

@@ -13,5 +13,6 @@ declare module "bun" {
     FLY_API_TOKEN: string;
     FLY_API_URL: string;
     FLY_ORG_SLUG: string;
+    PORT: string;
   }
 }

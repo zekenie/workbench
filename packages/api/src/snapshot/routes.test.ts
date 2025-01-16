@@ -3,8 +3,9 @@ import { randomUUIDv7 } from "bun";
 import { beforeEach, describe, expect, it } from "bun:test";
 import { sign } from "../auth/jwt.service";
 import { prisma } from "../db";
-import { app } from "../index.process";
+import { app } from "../api.process";
 import { createCanvas } from "../canvas/service";
+import { startProcess, stop } from "../outbox.process";
 
 const apiClient = treaty(app);
 
@@ -238,7 +239,8 @@ describe("snapshots", () => {
         { type: "digest", digest: expect.any(String) },
       ]);
     });
-    it("streams patches as they happen", async () => {
+    it.only("streams patches as they happen", async () => {
+      const outboxPromise = startProcess();
       const { jwt } = await worldSetup();
       const apiToken = await prisma.apiToken.create({
         data: {
@@ -297,6 +299,9 @@ describe("snapshots", () => {
         { type: "patch", patch: { op: "add", path: "/other", value: 1 } },
         { type: "digest", digest: expect.any(String) },
       ]);
+
+      stop();
+      await outboxPromise;
     });
   });
 });
@@ -304,6 +309,10 @@ describe("snapshots", () => {
 async function collectNPatches<T>(stream: AsyncIterable<T>, n: number) {
   const patches = [];
   for await (const patch of stream) {
+    // @ts-ignore
+    if (patch.type === "tick") {
+      continue;
+    }
     patches.push(patch);
     if (patches.length === n) break;
   }

@@ -3,13 +3,17 @@ import { RuntimeMachine } from "./runtime-machine";
 import eventToJob from "../lib/event-to-job";
 
 faktory.register("runtime.create", async (options: any) => {
-  console.log("job running");
   const { id } = options;
-  await RuntimeMachine.create({
-    canvasId: id,
-    envType: "default",
-    region: "ord",
-  });
+  try {
+    await RuntimeMachine.create({
+      canvasId: id,
+      envType: "default",
+      region: "ord",
+    });
+  } catch (e) {
+    console.error(await (e as Response).json());
+    throw new Error("failed to create runtime", e as Error);
+  }
 });
 
 eventToJob.add({

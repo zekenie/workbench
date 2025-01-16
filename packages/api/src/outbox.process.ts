@@ -7,8 +7,6 @@ import { Event } from "event-schemas";
 import { setupProcess } from "./lib/process-cleanup";
 import eventToJob from "./lib/event-to-job";
 
-setupProcess();
-
 async function selectPendingEventIds() {
   // Select IDs of pending events with FOR UPDATE SKIP LOCKED
   const pendingIds = await prisma.$queryRaw<{ eventId: string }[]>`
@@ -102,9 +100,13 @@ async function processOutboxEvents() {
   }
 }
 
-export async function pollOutboxEvents() {
+let running = true;
+
+export async function startProcess() {
+  setupProcess();
+
   let catchCount = 0;
-  while (true) {
+  while (running) {
     try {
       const eventsFound = await processOutboxEvents();
 
@@ -130,4 +132,6 @@ export async function pollOutboxEvents() {
   }
 }
 
-// Start the poller
+export function stop() {
+  running = false;
+}

@@ -7,7 +7,7 @@ import { httpCollector } from "../test/setup";
 import { slugifyIdentifier } from "./create-machine-helpers";
 import { faktoryClient } from "../lib/jobs";
 import { waitFor } from "../test/wait-for";
-import { startWorker } from "../worker.process";
+import * as worker from "../worker.process";
 
 async function worldSetup() {
   await prisma.canvasEnvironment.deleteMany();
@@ -36,13 +36,12 @@ async function worldSetup() {
 
 describe("Create Runtime Job", () => {
   beforeAll(async () => {
-    await startWorker();
+    await worker.startProcess();
   });
   it("creates a canvas environment record", async () => {
     const { canvasId } = await worldSetup();
 
     await waitFor(async () => {
-      console.log(await prisma.canvasEnvironment.count());
       return (await prisma.canvasEnvironment.count()) === 1;
     });
 

@@ -1,4 +1,3 @@
-import { treaty } from "../../../../node_modules/@elysiajs/eden";
 import React, {
   createContext,
   useCallback,
@@ -6,7 +5,6 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import type { App } from "../../../api/src/index.process";
 import tokenManager from "./token-manager";
 import { ClientType } from "@/backend";
 

@@ -1,17 +1,13 @@
 import swagger from "@elysiajs/swagger";
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
-import { startWorker } from "./worker.process";
 import { logger } from "@bogeychan/elysia-logger";
 
 import { auth } from "./auth/routes";
 import { canvasRoutes } from "./canvas/routes";
 import { snapshotRoutes } from "./snapshot/routes";
 import { runtimeRoutes } from "./runtime/routes";
-import { pollOutboxEvents } from "./outbox.process";
 import { setupProcess } from "./lib/process-cleanup";
-
-setupProcess();
 
 export const app = new Elysia({
   serve: {
@@ -25,20 +21,25 @@ export const app = new Elysia({
   .use(canvasRoutes)
   .use(runtimeRoutes)
   .use(snapshotRoutes)
-  .use(auth)
-  .listen(3000);
+  .use(auth);
+// .listen(Bun.env.PORT);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
 
 // DEPLOYMENT: in prod, don't do this. these need to run on other processes
-await startWorker().catch((err) =>
-  console.error("failed to start workers", err)
-);
-await pollOutboxEvents().catch((err) => {
-  console.error("Outbox: Fatal error in poller:", err);
-  process.exit(1);
-});
+// await startWorker().catch((err) =>
+//   console.error("failed to start workers", err)
+// );
+// await pollOutboxEvents().catch((err) => {
+//   console.error("Outbox: Fatal error in poller:", err);
+//   process.exit(1);
+// });
 
 export type App = typeof app;
+
+export async function startProcess() {
+  setupProcess();
+  app.listen(Bun.env.PORT);
+}

@@ -37,8 +37,6 @@ async function main() {
     },
   });
 
-  console.log({ config });
-
   if (!config.source) {
     throw new Error();
   }

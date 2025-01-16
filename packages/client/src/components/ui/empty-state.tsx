@@ -1,31 +1,77 @@
-import { MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons";
+import * as React from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { LucideIcon } from "lucide-react";
 
 interface EmptyStateProps {
-  icon?: "search" | "add";
   title: string;
   description: string;
-  actionLabel: string;
-  onAction: () => void;
+  icons?: LucideIcon[];
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  className?: string;
 }
 
 export function EmptyState({
-  icon = "search",
   title,
   description,
-  actionLabel,
-  onAction,
+  icons = [],
+  action,
+  className,
 }: EmptyStateProps) {
-  const Icon = icon === "search" ? MagnifyingGlassIcon : PlusIcon;
-
   return (
-    <div className="flex flex-col items-center justify-center h-[400px] bg-muted/50 rounded-lg p-8 text-center">
-      <div className="bg-primary/10 rounded-full p-3 mb-4">
-        <Icon className="w-6 h-6 text-primary" />
+    <div
+      className={cn(
+        "shadow-2xl bg-background border-border hover:border-green-700/25 text-center",
+        "border-2 rounded-xl p-14 w-full max-w-[620px] mx-auto",
+        "group transition duration-500 hover:duration-200",
+        className
+      )}
+    >
+      <div className="flex justify-center isolate">
+        {icons.length === 3 ? (
+          <>
+            <div className="bg-background size-12 grid place-items-center rounded-xl relative left-2.5 top-1.5 -rotate-6 shadow-lg ring-1 ring-border group-hover:-translate-x-5 group-hover:-rotate-12 group-hover:-translate-y-0.5 transition duration-500 group-hover:duration-200">
+              {React.createElement(icons[0], {
+                className: "w-6 h-6 text-muted-foreground",
+              })}
+            </div>
+            <div className="bg-background size-12 grid place-items-center rounded-xl relative z-10 shadow-lg ring-1 ring-border group-hover:-translate-y-0.5 transition duration-500 group-hover:duration-200">
+              {React.createElement(icons[1], {
+                className: "w-6 h-6 text-muted-foreground",
+              })}
+            </div>
+            <div className="bg-background size-12 grid place-items-center rounded-xl relative right-2.5 top-1.5 rotate-6 shadow-lg ring-1 ring-border group-hover:translate-x-5 group-hover:rotate-12 group-hover:-translate-y-0.5 transition duration-500 group-hover:duration-200">
+              {React.createElement(icons[2], {
+                className: "w-6 h-6 text-muted-foreground",
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="bg-background size-12 grid place-items-center rounded-xl shadow-lg ring-1 ring-border group-hover:-translate-y-0.5 transition duration-500 group-hover:duration-200">
+            {icons[0] &&
+              React.createElement(icons[0], {
+                className: "w-6 h-6 text-muted-foreground",
+              })}
+          </div>
+        )}
       </div>
-      <h3 className="text-2xl font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground mb-6 max-w-sm">{description}</p>
-      <Button onClick={onAction}>{actionLabel}</Button>
+      <h2 className="text-foreground font-medium mt-6">{title}</h2>
+      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
+        {description}
+      </p>
+      {action && (
+        <Button
+          onClick={action.onClick}
+          variant="outline"
+          size={"lg"}
+          className={cn("mt-4", "shadow-sm active:shadow-none")}
+        >
+          {action.label}
+        </Button>
+      )}
     </div>
   );
 }

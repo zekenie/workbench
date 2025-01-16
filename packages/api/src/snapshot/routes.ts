@@ -9,7 +9,7 @@ import { updateSnapshot } from "./service";
 import { EventEmitter, on } from "node:events";
 import { createTicker } from "../lib/ticker";
 
-const ticket = createTicker(1000);
+const ticker = createTicker(1000);
 
 type PatchEvents =
   | {
@@ -84,14 +84,14 @@ export const snapshotRoutes = new Elysia({
         currentClock = last(snapshotRecords)!.clock;
       }
 
-      const emitter = new EventEmitter().on("tick", () => {});
+      const emitter = new EventEmitter();
 
       // heartbeat
-      ticket.on("tick", () => {
+      ticker.on("tick", () => {
         emitter.emit("message", { type: "tick" });
       });
 
-      pubsub.crossSubscribe("canvasId", query.id, async (message) => {
+      await pubsub.crossSubscribe("canvasId", query.id, async (message) => {
         if (message.event === "canvas.snapshot") {
           const snap = await prisma.snapshot.findFirst({
             where: {
@@ -115,8 +115,10 @@ export const snapshotRoutes = new Elysia({
         }
       });
 
-      for await (const message of on(emitter, "message")) {
-        yield message as unknown as PatchEvents;
+      for await (const messages of on(emitter, "message")) {
+        for (const message of messages) {
+          yield message as unknown as PatchEvents;
+        }
       }
       // const iterator = pubsub.crossSubscribeIterator("canvasId", query.id);
 

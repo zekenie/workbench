@@ -3,7 +3,7 @@
   "version": "1.0.50",
   "scripts": {
     "test": "bun --env-file=./.env.test test",
-    "dev": "bun --inspect --watch src/index.process.ts",
+    "dev": "bun --inspect --watch src/dev.meta-process.ts",
     "generate-keys": "bun scripts/generate-keys.ts",
     "generate-api-keys": "bun scripts/generate-api-keys.ts",
     "db:push": "bun prisma db push",
@@ -41,6 +41,7 @@
     "smol-toml": "^1.3.1"
   },
   "devDependencies": {
+    "@ngrok/ngrok": "^1.4.1",
     "bun-types": "latest",
     "prisma": "6"
   },

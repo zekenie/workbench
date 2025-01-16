@@ -28,7 +28,7 @@ export const runtimeRoutes = new Elysia({
       .derive(({ params }) => {
         return {
           machine: new RuntimeMachine({
-            canvasId: params.canvasId,
+            canvasId: params.id,
             envType: "default",
           }),
         };

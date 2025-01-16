@@ -2,6 +2,7 @@ import { Api, FlyMachineConfig } from "../fly/machine-api";
 
 const flyApi = new Api({
   baseUrl: Bun.env.FLY_API_URL,
+
   baseApiParams: {
     headers: {
       authorization: `Bearer ${Bun.env.FLY_API_TOKEN}`,
@@ -12,7 +13,7 @@ const flyApi = new Api({
 export type Identifier = { canvasId: string; envType: string };
 
 export function slugifyIdentifier(i: Identifier) {
-  return `${i.canvasId}::${i.envType}`;
+  return `${i.canvasId.slice(-5)}${i.envType}`;
 }
 
 export async function getMachineInfo({
@@ -34,19 +35,6 @@ export async function getMachineInfo({
   };
 }
 
-export async function configureEnv({ identifier }: { identifier: Identifier }) {
-  const secretString = identifier.canvasId;
-  const secretBytes = new TextEncoder().encode(secretString);
-  await flyApi.apps.secretCreate(
-    slugifyIdentifier(identifier),
-    "CANVAS_ID",
-    "encrypted",
-    {
-      value: Array.from(secretBytes),
-    }
-  );
-}
-
 export async function createApp({
   orgSlug,
   identifier,
@@ -55,12 +43,13 @@ export async function createApp({
   identifier: Identifier;
 }) {
   const slug = slugifyIdentifier(identifier);
-  await flyApi.apps.appsCreate({
+
+  const res = await flyApi.apps.appsCreate({
     org_slug: orgSlug,
     app_name: slug,
   });
 
-  return (await flyApi.apps.appsShow(slug)).data;
+  return (await flyApi.apps.appsShow(slug, {})).data;
 }
 
 export async function createVolume({
@@ -73,24 +62,27 @@ export async function createVolume({
   const res = await flyApi.apps.volumesCreate(slugifyIdentifier(identifier), {
     region,
     name: slugifyIdentifier(identifier),
+    size_gb: 1,
   });
 
   return res.data;
 }
-
-export async function createMachine({
-  volumeName,
-  region,
+export function generateConfig({
   identifier,
+  volumeName,
 }: {
-  volumeName: string;
   identifier: Identifier;
-  region: string;
+  volumeName: string;
 }) {
   const config: FlyMachineConfig = {
     image: Bun.env.FLY_RUNTIME_IMAGE,
+    env: {
+      CANVAS_ID: identifier.canvasId,
+    },
     services: [
       {
+        autostart: true,
+        autostop: "suspend",
         ports: [
           {
             port: 80,
@@ -108,8 +100,7 @@ export async function createMachine({
         internal_port: 3001,
       },
     ],
-
-    auto_destroy: true,
+    auto_destroy: false,
     guest: {
       cpu_kind: "shared",
       cpus: 1,
@@ -123,10 +114,21 @@ export async function createMachine({
       },
     ],
   };
+  return config;
+}
 
+export async function createMachine({
+  volumeName,
+  region,
+  identifier,
+}: {
+  volumeName: string;
+  identifier: Identifier;
+  region: string;
+}) {
   const res = await flyApi.apps.machinesCreate(slugifyIdentifier(identifier), {
     region,
-    config,
+    config: generateConfig({ identifier, volumeName }),
   });
 
   const machine = res.data;
