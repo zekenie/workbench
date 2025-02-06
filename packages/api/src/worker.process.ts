@@ -1,5 +1,6 @@
 import faktory from "faktory-worker";
 import "./runtime/create-runtime.job.js";
+import "./runtime/sync-fly-machines.job.js";
 import { once } from "lodash-es";
 import { setupProcess } from "./lib/process-cleanup.js";
 

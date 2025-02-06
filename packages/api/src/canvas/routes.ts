@@ -13,6 +13,14 @@ const canvasPagination = offsetPaginationModel(
     description: t.Union([t.String(), t.Null()]),
     createdAt: t.Date(),
     updatedAt: t.Date(),
+    environments: t.Array(
+      t.Object({
+        type: t.String(),
+        id: t.String(),
+        region: t.String(),
+        state: t.String(),
+      })
+    ),
   }),
   {}
 );
@@ -30,6 +38,7 @@ export const canvasRoutes = new Elysia({
         listCanvases({ onBehalfOf: principal!.id, ...query }),
         countCanvases({ onBehalfOf: principal!.id }),
       ]);
+
       return {
         records,
         total,

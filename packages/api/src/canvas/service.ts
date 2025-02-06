@@ -1,6 +1,7 @@
 import { randomUUIDv7 } from "bun";
 import { prisma } from "../db";
-import pubsub, { publish } from "../lib/pubsub";
+import { publish } from "../lib/pubsub";
+import { groupBy } from "lodash-es";
 
 export async function createCanvas({
   userId,
@@ -131,5 +132,18 @@ export async function listCanvases({
     },
   });
 
-  return accesses.map((a) => a.canvas);
+  const canvases = accesses.map((a) => a.canvas);
+
+  const envs = await prisma.canvasEnvironment.findMany({
+    where: {
+      canvasId: { in: canvases.map((c) => c.id) },
+    },
+  });
+
+  const envsByCanvasId = groupBy(envs, "canvasId");
+
+  return canvases.map((canvas) => ({
+    ...canvas,
+    environments: envsByCanvasId[canvas.id] || [],
+  }));
 }

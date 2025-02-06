@@ -47,7 +47,7 @@ model Canvas {
   description          String?
   descriptionGenerated String?
   snapshots            Snapshot[]
-  canvasEnvironment    CanvasEnvironment[]
+  canvasEnvironments   CanvasEnvironment[]
 }
 
 model CanvasEnvironment {
@@ -55,6 +55,18 @@ model CanvasEnvironment {
   updatedAt DateTime @default(now())
   createdAt DateTime @default(now())
   machineId String   @unique
+  // # State from fly #
+  // | "created"
+  // | "starting"
+  // | "started"
+  // | "stopping"
+  // | "stopped"
+  // | "suspending"
+  // | "suspended"
+  // | "replacing"
+  // | "destroying"
+  // | "destroyed";
+  state     String   @default("created")
   appId     String
   volumeId  String
   region    String

@@ -37,6 +37,31 @@ export const runtimeRoutes = new Elysia({
         return machine.getMachineInfo();
       })
       .get(
+        "/values",
+        async ({ machine, request, error }) => {
+          const env = await machine.findEnvRecord();
+          const url = new URL(await machine.url());
+
+          if (env.state !== "started") {
+            return error(503, "machine not on");
+          }
+
+          return fetch(url, {
+            method: request.method,
+            headers: request.headers,
+            body: request.body,
+          });
+        },
+        {
+          auth: "user",
+
+          detail: {
+            description:
+              "proxies requests to the runtime machine's dev server so values can be observed",
+          },
+        }
+      )
+      .get(
         "/wait-for-state",
         async ({ machine, query }) => {
           await machine.waitForState(query.state);

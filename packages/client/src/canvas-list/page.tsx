@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { ReactElement, useCallback, useState } from "react";
 import { useAuthenticated } from "../auth/provider";
 import { useQuery } from "@tanstack/react-query";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
@@ -9,6 +9,28 @@ import { ClientType } from "@/backend";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Code, Bot, Workflow } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Pause,
+  Circle,
+  LoaderIcon,
+  Snowflake,
+  ShieldQuestion,
+} from "lucide-react";
+import { VMState } from "@/runtime/toolbar";
+
+const stateToIcon: Record<VMState, ReactElement> = {
+  created: <ShieldQuestion size={12} />,
+  destroyed: <Snowflake size={12} />,
+  destroying: <LoaderIcon size={12} />,
+  replacing: <LoaderIcon size={12} />,
+  started: <Circle size={12} />,
+  starting: <LoaderIcon size={12} />,
+  stopped: <Snowflake size={12} />,
+  stopping: <LoaderIcon size={12} />,
+  suspended: <Pause size={12} />,
+  suspending: <LoaderIcon size={12} />,
+};
 
 function useCanvases() {
   const [page, setPage] = useState(0);
@@ -114,29 +136,20 @@ export const CanvasListPage = () => {
             className="cursor-pointer rounded-lg border p-4 hover:shadow-md"
           >
             <Link to={`/canvases/${record.id}`} className="flex flex-col gap-1">
-              {/* <Link
-                to={`/canvases/${record.id}`}
-                className="font-medium text-gray-900"
-              >
-                {record.title || `Untitled (${record.id})`}
-              </Link>
-              {record.description && (
-                <p className="text-sm text-gray-500">{record.description}</p>
-              )} */}
-
               <div className="mb-8 flex items-center justify-between">
                 <div
                   className={`flex size-10 items-center justify-center rounded-lg bg-muted p-2`}
                 >
                   i
                 </div>
-                {/* <Button
-                  variant="outline"
-                  size="sm"
-                  className={`${app.connected ? "border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900" : ""}`}
-                >
-                  {app.connected ? "Connected" : "Connect"}
-                </Button> */}
+                <div>
+                  {record.environments.map((env) => (
+                    // @ts-ignore
+                    <Badge variant={"secondary"} icon={stateToIcon[env.state]}>
+                      {env.state}
+                    </Badge>
+                  ))}
+                </div>
               </div>
               <div>
                 <h2 className="mb-1 font-semibold">

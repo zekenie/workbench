@@ -17,6 +17,7 @@ import { AuthProvider, useAuth } from "./auth/provider";
 import { FC, useEffect, useRef } from "react";
 import { CanvasListPage } from "./canvas-list/page";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { RuntimeStateProvider } from "./runtime/toolbar/state";
 
 const queryClient = new QueryClient();
 
@@ -60,7 +61,9 @@ const router = createBrowserRouter([
         path: "canvases/:id",
         element: (
           <Route requiresAuth>
-            <Canvas />
+            <RuntimeStateProvider>
+              <Canvas />
+            </RuntimeStateProvider>
           </Route>
         ),
       },

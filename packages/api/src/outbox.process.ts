@@ -6,6 +6,8 @@ import { pubsubWithPublish } from "./lib/pubsub";
 import { Event } from "event-schemas";
 import { setupProcess } from "./lib/process-cleanup";
 import eventToJob from "./lib/event-to-job";
+import { Cron } from "croner";
+import { faktoryClient } from "./lib/jobs";
 
 async function selectPendingEventIds() {
   // Select IDs of pending events with FOR UPDATE SKIP LOCKED
@@ -104,6 +106,10 @@ let running = true;
 
 export async function startProcess() {
   setupProcess();
+
+  new Cron("@hourly", () => {
+    return faktoryClient.job("sync-fly-machines").push();
+  });
 
   let catchCount = 0;
   while (running) {

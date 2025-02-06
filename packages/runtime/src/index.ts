@@ -66,7 +66,6 @@ async function main() {
     },
   });
 
-  console.log(`Server started at http://localhost:${server.port}`);
   if (config.canvasId) {
     console.log(`Live edit enabled for canvas: ${config.canvasId}`);
   }

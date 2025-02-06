@@ -29,6 +29,7 @@
     "@types/lodash-es": "^4.17.12",
     "@urql/core": "^5.1.0",
     "compiler": "workspace:*",
+    "croner": "^9.0.0",
     "elysia": "^1.1.25",
     "event-schemas": "workspace:*",
     "faktory-worker": "^4.6.0",

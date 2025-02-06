@@ -6,7 +6,7 @@ import {
   Tldraw,
 } from "@tldraw/tldraw";
 import { useSync } from "@tldraw/sync";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/auth/provider";
 import { IDEUtil } from "./tools/IDE/util";
@@ -39,7 +39,7 @@ const Canvas: React.FC = () => {
     assets: myAssetStore,
   });
 
-  const { vmState, handleVMAction } = useRuntimeStateManager(client, id!);
+  const { vmState, handleVMAction } = useRuntimeStateManager();
 
   const onMount = useCallback((editor: Editor) => {
     // Mount logic here if needed

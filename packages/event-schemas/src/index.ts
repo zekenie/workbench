@@ -1,7 +1,8 @@
 import { z } from "zod";
 import canvasEvents, { type CanvasEvent } from "./schemas/canvas";
+import runtimeEvents, { type RuntimeEvent } from "./schemas/runtime";
 
-export default [...canvasEvents] as const;
+export default [...canvasEvents, ...runtimeEvents] as const;
 
 export type SchemaMap = Record<string, z.ZodType>;
-export type Event = CanvasEvent;
+export type Event = CanvasEvent | RuntimeEvent;

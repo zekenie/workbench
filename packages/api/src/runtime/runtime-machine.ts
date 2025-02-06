@@ -1,3 +1,4 @@
+import { CanvasEnvironment } from "@prisma/client";
 import { prisma } from "../db";
 import { Api } from "../fly/machine-api";
 import {
@@ -8,6 +9,7 @@ import {
   Identifier,
   getMachineInfo,
 } from "./create-machine-helpers";
+import { publish } from "../lib/pubsub";
 
 const flyApi = new Api({
   baseUrl: Bun.env.FLY_API_URL,
@@ -18,15 +20,21 @@ const flyApi = new Api({
   },
 });
 
-type EnvRecord = {
-  appId: string;
-  machineId: string;
-};
+type MachineState =
+  | "started"
+  | "stopped"
+  | "suspended"
+  | "destroyed"
+  | "starting"
+  | "stopping"
+  | "suspending";
+
+type FinalState = "started" | "stopped" | "suspended" | "destroyed";
 
 export class RuntimeMachine {
-  private envRecordPromise: Promise<EnvRecord> | null = null;
+  private envRecordPromise: Promise<CanvasEnvironment> | null = null;
 
-  constructor(private readonly identifier: Identifier) {}
+  constructor(public readonly identifier: Identifier) {}
 
   async getMachineInfo() {
     const env = await this.findEnvRecord();
@@ -34,6 +42,11 @@ export class RuntimeMachine {
       identifier: this.identifier,
       machineId: env.machineId,
     });
+  }
+
+  async url() {
+    const env = await this.findEnvRecord();
+    return `http://${env.machineId}.${this.appName}.internal`;
   }
 
   static async create({
@@ -84,7 +97,7 @@ export class RuntimeMachine {
     };
   }
 
-  async waitForState(state: "started" | "stopped" | "suspended" | "destroyed") {
+  async waitForState(state: FinalState) {
     const env = await this.findEnvRecord();
     await flyApi.apps.machinesWait(
       slugifyIdentifier(this.identifier),
@@ -95,7 +108,7 @@ export class RuntimeMachine {
     );
   }
 
-  private async findEnvRecord(): Promise<EnvRecord> {
+  async findEnvRecord(): Promise<CanvasEnvironment> {
     if (!this.envRecordPromise) {
       this.envRecordPromise = prisma.canvasEnvironment.findFirstOrThrow({
         where: {
@@ -107,30 +120,88 @@ export class RuntimeMachine {
     return this.envRecordPromise;
   }
 
-  async start() {
+  async syncMachineState() {
+    const env = await this.findEnvRecord();
+
+    const machineInfo = await this.getMachineInfo();
+
+    if (env.state !== machineInfo.state) {
+      await prisma.canvasEnvironment.update({
+        where: {
+          id: env.id,
+        },
+        data: {
+          state: machineInfo.state,
+        },
+      });
+
+      // this gets cached and we just changed it, so let's invalidate the cache
+      this.envRecordPromise = null;
+
+      await publish({
+        event: "runtime.state-change",
+        canvasId: env.canvasId,
+        canvasEnvironmentId: env.id,
+        newState: machineInfo.state!,
+        prevState: env.state,
+      });
+    }
+
+    return machineInfo.state;
+  }
+
+  get appName() {
+    return slugifyIdentifier(this.identifier);
+  }
+
+  private async executeStateChange({
+    action,
+    loadingState,
+    finalState,
+  }: {
+    action: (appId: string, machineId: string) => Promise<any>;
+    loadingState: MachineState;
+    finalState: FinalState;
+  }) {
     const { machineId } = await this.findEnvRecord();
-    await flyApi.apps.machinesStart(
-      slugifyIdentifier(this.identifier),
-      machineId
-    );
+    const appId = slugifyIdentifier(this.identifier);
+
+    await action(appId, machineId);
+    const state = await this.syncMachineState();
+
+    if (state !== loadingState) {
+      throw new UnexpectedStateError();
+    }
+
+    await this.waitForState(finalState);
+    await this.syncMachineState();
+  }
+
+  async start() {
+    await this.executeStateChange({
+      action: (appId, machineId) => flyApi.apps.machinesStart(appId, machineId),
+      loadingState: "starting",
+      finalState: "started",
+    });
   }
 
   async stop() {
-    const { machineId } = await this.findEnvRecord();
-    await flyApi.apps.machinesStop(
-      slugifyIdentifier(this.identifier),
-      machineId,
-      {
-        signal: "SIGTERM",
-      }
-    );
+    await this.executeStateChange({
+      action: (appId, machineId) =>
+        flyApi.apps.machinesStop(appId, machineId, { signal: "SIGTERM" }),
+      loadingState: "stopping",
+      finalState: "stopped",
+    });
   }
 
   async suspend() {
-    const { machineId } = await this.findEnvRecord();
-    await flyApi.apps.machinesSuspend(
-      slugifyIdentifier(this.identifier),
-      machineId
-    );
+    await this.executeStateChange({
+      action: (appId, machineId) =>
+        flyApi.apps.machinesSuspend(appId, machineId),
+      loadingState: "suspending",
+      finalState: "suspended",
+    });
   }
 }
+
+class UnexpectedStateError extends Error {}

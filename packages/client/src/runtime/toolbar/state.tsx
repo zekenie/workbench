@@ -1,7 +1,15 @@
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
 import { VMAction, VMState } from "@/runtime/toolbar";
 import { ClientType } from "@/backend";
+import { useAuth } from "@/auth/provider";
+import { useParams } from "react-router-dom";
 
 interface RuntimeStateTransition {
   transitionState: VMState;
@@ -65,27 +73,47 @@ const vmStateTransitions: Record<VMAction, RuntimeStateTransition> = {
   },
 };
 
-export const useRuntimeStateManager = (client: ClientType, id: string) => {
+interface RuntimeStateContextType {
+  vmState: VMState;
+  handleVMAction: (action: VMAction) => Promise<void>;
+  runtimeId: string | null;
+}
+
+const RuntimeStateContext = createContext<RuntimeStateContextType | null>(null);
+
+interface RuntimeStateProviderProps {
+  children: ReactNode;
+}
+
+export function RuntimeStateProvider({ children }: RuntimeStateProviderProps) {
+  const { id: runtimeId } = useParams<{ id: string }>();
+  const { client } = useAuth();
   const [vmState, setVmState] = useState<VMState>("starting");
+  // const [runtimeId, setRuntimeId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!runtimeId) return;
+
     client
-      .runtime({ id })
+      .runtime({ id: runtimeId })
       .get()
       .then(({ data }) => {
         if (data?.state) {
           setVmState(data.state as VMState);
         }
       });
-  }, [client, id]);
+  }, [client, runtimeId]);
 
   const handleVMAction = async (action: VMAction) => {
+    if (!runtimeId) return;
+
     const transition = vmStateTransitions[action];
     setVmState(transition.transitionState);
 
-    const actionPromise = transition.action(client, id);
+    const actionPromise = transition.action(client, runtimeId);
     toast.promise(actionPromise, transition.toast);
-    await client.runtime({ id })["wait-for-state"].get({
+
+    await client.runtime({ id: runtimeId })["wait-for-state"].get({
       // @ts-ignore
       query: { state: transition.targetState },
     });
@@ -93,5 +121,26 @@ export const useRuntimeStateManager = (client: ClientType, id: string) => {
     setVmState(transition.targetState);
   };
 
+  return (
+    <RuntimeStateContext.Provider
+      value={{ vmState, handleVMAction, runtimeId: runtimeId as string }}
+    >
+      {children}
+    </RuntimeStateContext.Provider>
+  );
+}
+
+// Hook that maintains the same API as before
+export function useRuntimeStateManager() {
+  const context = useContext(RuntimeStateContext);
+
+  if (!context) {
+    throw new Error(
+      "useRuntimeStateManager must be used within a RuntimeStateProvider"
+    );
+  }
+
+  const { vmState, handleVMAction } = context;
+
   return { vmState, handleVMAction };
-};
+}
