@@ -1,5 +1,27 @@
 # Object Pagination
 
+```mermaid
+graph TD
+    root((root)) --> A(a)
+    root --> B(b)
+    root --> C(...breadth first)
+    A --> A1(a1)
+    A --> A2(a2)
+    A2 --> A21("...depth first")
+    B --> B1(b1)
+    B --> B2(...depth first)
+
+    classDef normal fill:#d1f2eb,stroke:#2ecc71;
+    classDef wideMore fill:#f9e79f,stroke:#f1c40f,stroke-dasharray: 5 5;
+    classDef deepMore fill:#f9e79f,stroke:#f1c40f,stroke-dasharray: 5 5;
+
+    class root,A,B,A1,A2,B1 normal;
+    class C wideMore;
+    class A21,B2 deepMore;
+
+    linkStyle default stroke:#2ecc71,stroke-width:2px;
+```
+
 ## Overview
 This implementation provides a way to paginate through large JavaScript objects, supporting both breadth-first and depth-first traversal strategies. It's designed for dev-tools-like UIs where server-side objects need to be explored incrementally on the client.
 
