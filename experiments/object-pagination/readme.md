@@ -7,7 +7,7 @@ graph TD
     root --> C(...breadth first)
     A --> A1(a1)
     A --> A2(a2)
-    A2 --> A21("...depth first")
+    A2 --> A21("...A2.1 depth first")
     B --> B1(b1)
     B --> B2(...breadth first)
 
