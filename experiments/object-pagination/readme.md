@@ -9,7 +9,7 @@ graph TD
     A --> A2(a2)
     A2 --> A21("...depth first")
     B --> B1(b1)
-    B --> B2(...depth first)
+    B --> B2(...breadth first)
 
     classDef normal fill:#d1f2eb,stroke:#2ecc71;
     classDef wideMore fill:#f9e79f,stroke:#f1c40f,stroke-dasharray: 5 5;
