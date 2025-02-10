@@ -11,7 +11,7 @@ class Inspector {
   error?: unknown;
   constructor(
     readonly id: string,
-    readonly onChange: OnChange
+    readonly onChange: OnChange,
   ) {}
 
   pending() {
@@ -40,7 +40,7 @@ type Variable = any;
 
 export async function createRuntime(
   compiled: CompiledNode[],
-  onChange: OnChange
+  onChange: OnChange,
 ) {
   const runtime = new Runtime();
   const module = runtime.module();
@@ -80,9 +80,9 @@ export async function createRuntime(
   setInterval(
     () =>
       console.log(
-        Object.values(variableMap).map((thing) => thing.variable._value)
+        Object.values(variableMap).map((thing) => thing.variable._value),
       ),
-    2000
+    2000,
   );
   return {
     updateNode,
