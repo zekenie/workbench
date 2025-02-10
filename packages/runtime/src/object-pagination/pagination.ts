@@ -2,7 +2,7 @@ import { get } from "lodash-es";
 import { breadthFirstKeys, depthFirstKeys, primeUntil } from "./iteration";
 import { Page } from "./page";
 
-export default function createPage2d<T>({
+export default function createPage<T>({
   object,
   cursor,
   direction,
@@ -11,7 +11,7 @@ export default function createPage2d<T>({
   object: T;
   cursor?: string;
   direction: "deep" | "wide";
-  pageSize: number;
+  pageSize?: number;
 }) {
   const page = new Page(pageSize);
   const gen =

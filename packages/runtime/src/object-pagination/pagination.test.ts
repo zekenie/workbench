@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import createPage2d from "./pagination-2d";
+import createPage from "./pagination";
 import { Page } from "./page";
 
 // Test helpers that make assertions more readable while keeping test stories clear
@@ -32,9 +32,9 @@ const helpers = {
   },
 };
 
-describe("createPage2d", () => {
+describe("createPage", () => {
   test("should handle empty object", () => {
-    const page = createPage2d({
+    const page = createPage({
       object: {},
       direction: "wide",
     });
@@ -51,7 +51,7 @@ describe("createPage2d", () => {
         d: 4,
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "wide",
       });
@@ -73,7 +73,7 @@ describe("createPage2d", () => {
         },
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "wide",
       });
@@ -101,7 +101,7 @@ describe("createPage2d", () => {
       };
 
       const pageSize = 3;
-      const page = createPage2d({
+      const page = createPage({
         object,
         pageSize,
         direction: "wide",
@@ -125,7 +125,7 @@ describe("createPage2d", () => {
         b: 2,
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "wide",
       });
@@ -160,7 +160,7 @@ describe("createPage2d", () => {
 
       expect(object.b.b1).toHaveLength(184);
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "wide",
       });
@@ -184,7 +184,7 @@ describe("createPage2d", () => {
         b: 2,
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "wide",
         cursor: "nonexistant",
@@ -202,7 +202,7 @@ describe("createPage2d", () => {
       };
       object.circular = object;
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "wide",
       });
@@ -221,7 +221,7 @@ describe("createPage2d", () => {
         };
 
         // Get page starting after 'b'
-        const page = createPage2d({
+        const page = createPage({
           cursor: "b",
           pageSize: 2,
           object,
@@ -242,7 +242,7 @@ describe("createPage2d", () => {
         };
 
         // Get page starting after 'a.a2'
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a.a2",
           pageSize: 4,
           object,
@@ -261,7 +261,7 @@ describe("createPage2d", () => {
         };
 
         // Get page starting after last property of first nested object
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a.a2",
           pageSize: 2,
           object,
@@ -279,7 +279,7 @@ describe("createPage2d", () => {
         };
 
         // Get page starting after last property of first nested object
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a",
           pageSize: 2,
           object,
@@ -296,7 +296,7 @@ describe("createPage2d", () => {
         };
 
         // Get page starting after last property of first nested object
-        const page = createPage2d({ object, direction: "wide" });
+        const page = createPage({ object, direction: "wide" });
 
         expect(page.hasNextPage).toBeFalse();
       });
@@ -309,7 +309,7 @@ describe("createPage2d", () => {
         };
 
         // Start after first top-level key
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a",
           pageSize: 4,
           object,
@@ -327,7 +327,7 @@ describe("createPage2d", () => {
         };
 
         // Start after second array element
-        const page = createPage2d({
+        const page = createPage({
           cursor: "arr.1",
           pageSize: 2,
           object,
@@ -349,7 +349,7 @@ describe("createPage2d", () => {
         d: 4,
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "deep",
       });
@@ -372,7 +372,7 @@ describe("createPage2d", () => {
         },
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "deep",
       });
@@ -403,7 +403,7 @@ describe("createPage2d", () => {
       };
 
       const pageSize = 3;
-      const page = createPage2d({
+      const page = createPage({
         object,
         pageSize,
         direction: "deep",
@@ -428,7 +428,7 @@ describe("createPage2d", () => {
         b: 2,
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "deep",
       });
@@ -453,7 +453,7 @@ describe("createPage2d", () => {
         },
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "deep",
       });
@@ -479,7 +479,7 @@ describe("createPage2d", () => {
         b: 2,
       };
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "deep",
         cursor: "nonexistant",
@@ -497,7 +497,7 @@ describe("createPage2d", () => {
       };
       object.circular = object;
 
-      const page = createPage2d({
+      const page = createPage({
         object,
         direction: "deep",
       });
@@ -519,7 +519,7 @@ describe("createPage2d", () => {
         };
 
         // Get page starting after a.a1
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a.a1",
           pageSize: 2,
           object,
@@ -543,7 +543,7 @@ describe("createPage2d", () => {
           b: { b1: 3, b2: 4 },
         };
 
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a.a1",
           pageSize: 3,
           object,
@@ -561,7 +561,7 @@ describe("createPage2d", () => {
           b: { b1: 3, b2: 4 },
         };
 
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a.a2",
           pageSize: 3,
           object,
@@ -579,7 +579,7 @@ describe("createPage2d", () => {
           b: { b1: 3, b2: 4 },
         };
 
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a.a1",
           pageSize: 2,
           object,
@@ -595,7 +595,7 @@ describe("createPage2d", () => {
           b: { b1: 3, b2: 4 },
         };
 
-        const page = createPage2d({
+        const page = createPage({
           object,
           direction: "deep",
         });
@@ -612,7 +612,7 @@ describe("createPage2d", () => {
           b: { b1: 3 },
         };
 
-        const page = createPage2d({
+        const page = createPage({
           cursor: "a.a1",
           pageSize: 3,
           object,
@@ -630,7 +630,7 @@ describe("createPage2d", () => {
           next: "value",
         };
 
-        const page = createPage2d({
+        const page = createPage({
           cursor: "arr.1",
           pageSize: 3,
           object,

@@ -1,3 +1,16 @@
+export const simple = {
+  foo: "bar",
+  baz: 4,
+  no: true,
+  bob: null,
+  bopple: new Date(),
+  booooooop: {
+    bar: {
+      baz: "bap",
+    },
+  },
+};
+
 class Door {
   constructor(position) {
     this.position = position; // "frontLeft", "frontRight", "rearLeft", "rearRight"

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@observablehq/runtime": "^6.0.0",
+    "@sinclair/typebox": "^0.34.16",
     "@tldraw/sync-core": "^3.6.1",
     "@types/lodash-es": "^4.17.12",
     "compiler": "workspace:*",
