@@ -1,6 +1,6 @@
 // router.ts
 import type { Harness } from "../harness";
-import { handleEventsRoute } from "./routes";
+import { handleEventsRoute, handleValuesRoute } from "./routes";
 
 type HttpMethod =
   | "GET"
@@ -17,7 +17,7 @@ function addCorsHeaders(response: Response): Response {
   response.headers.set("Access-Control-Allow-Origin", "*");
   response.headers.set(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
+    "GET, POST, PUT, DELETE, OPTIONS",
   );
   response.headers.set("Access-Control-Allow-Headers", "Content-Type");
   return response;
@@ -25,7 +25,7 @@ function addCorsHeaders(response: Response): Response {
 
 export async function router(
   req: Request,
-  harness: Harness
+  harness: Harness,
 ): Promise<Response> {
   const url = new URL(req.url);
 
@@ -37,6 +37,7 @@ export async function router(
   // Route handlers
   const routes: Record<RouteKey, (req: Request) => Promise<Response>> = {
     "GET /events": () => handleEventsRoute(req, harness),
+    "GET /values": () => handleValuesRoute(req, harness),
     "GET /health": async () => {
       return new Response(null, {
         status: 200,

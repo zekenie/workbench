@@ -12,6 +12,7 @@ type RuntimeConfig = {
   apiDomain?: string;
   onValueChange?: (id: string, value: RuntimeValue) => void;
   source: string;
+  noApi: boolean;
 };
 
 export class Harness {
@@ -42,7 +43,7 @@ export class Harness {
 
     this.updateNode = (
       await createRuntime(compiled?.nodes || [], (id, val) =>
-        this.onValueChange(id, val)
+        this.onValueChange(id, val),
       )
     ).updateNode;
 
@@ -61,6 +62,9 @@ export class Harness {
 
   async startWatchingLiveEdits() {
     console.log("harness config", this.config);
+    if (this.config.noApi) {
+      return;
+    }
     if (!this.config.apiDomain) {
       return;
     }
@@ -81,7 +85,7 @@ export class Harness {
     const { data, status, error } = await createAuthenticatedClient(
       this.config.apiId,
       this.config.apiSecret,
-      this.config.apiDomain
+      this.config.apiDomain,
     ).snapshots["snapshot-stream"].get({
       query: { id: this.config.canvasId, clock: this.clock },
     });
@@ -106,7 +110,7 @@ export class Harness {
             // for now throw an error
             if (this.clock > 0) {
               console.warn(
-                "mismatches between digest and expected digest. might have lost a message"
+                "mismatches between digest and expected digest. might have lost a message",
               );
             }
           }
@@ -139,7 +143,7 @@ export class Harness {
   private async syncRuntime() {
     if (!this.updateNode) {
       throw new Error(
-        "cannot sync runtime because it has not been created yet"
+        "cannot sync runtime because it has not been created yet",
       );
     }
     const nodes = this.compiledCanvas?.nodes;

@@ -1,4 +1,31 @@
 import type { Harness } from "../harness";
+import { createPage } from "../object-pagination";
+
+export async function handleValuesRoute(
+  req: Request,
+  harness: Harness,
+): Promise<Response> {
+  const url = new URL(req.url);
+  const cursor = url.searchParams.get("cursor") || undefined;
+  const direction = (url.searchParams.get("direction") || "wide") as
+    | "wide"
+    | "deep";
+  const pageSize = parseInt(url.searchParams.get("pageSize") || "100", 10);
+
+  const page = createPage({
+    object: harness.values,
+    cursor,
+    direction,
+    pageSize,
+  });
+
+  return new Response(JSON.stringify(page.toJSON()), {
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache",
+    },
+  });
+}
 
 export async function handleEventsRoute(req: Request, harness: Harness) {
   const stream = new ReadableStream({

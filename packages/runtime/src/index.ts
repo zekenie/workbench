@@ -34,6 +34,10 @@ async function main() {
         short: "p",
         default: Bun.env.PORT,
       },
+      noApi: {
+        type: "boolean",
+        default: false,
+      },
     },
   });
 
@@ -48,6 +52,7 @@ async function main() {
     canvasId: config.canvasId!,
     apiId: config.apiId,
     apiSecret: config.apiSecret,
+    noApi: config.noApi,
   });
 
   // Load the initial source file
