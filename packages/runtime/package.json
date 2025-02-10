@@ -4,6 +4,9 @@
   "private": true,
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "canvas-runtime": "./dist/index.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -14,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node && chmod +x dist/index.js",
     "typecheck": "tsc --noEmit",
     "start": "bun run ./src/index.ts",
     "docker-build": "docker build --platform linux/amd64 --build-context workspace=../.. ."

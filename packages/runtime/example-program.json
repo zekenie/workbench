@@ -1,5 +1,5 @@
 {
-  "clock": 1609,
+  "clock": 1859,
   "schema": {
     "sequences": {
       "com.tldraw.page": 1,
@@ -90,7 +90,7 @@
         "props": {
           "h": 300,
           "w": 300,
-          "code": "timeout % 2 === 0",
+          "code": "timestamp % 2 === 0",
           "color": "black",
           "title": "isEvan",
           "private": true,
@@ -102,19 +102,19 @@
         "rotation": 0,
         "typeName": "shape"
       },
-      "lastChangedClock": 1609
+      "lastChangedClock": 1717
     },
     {
       "state": {
-        "x": 850.00390625,
-        "y": 443.3125,
-        "id": "shape:K2sRXdNRNTBcPXiP4MOLU",
+        "x": 435.1885291885188,
+        "y": 421.0057395414092,
+        "id": "shape:TfFCWRPyef4F9SHj1F9VY",
         "meta": {},
         "type": "arrow",
-        "index": "a338S",
+        "index": "a32dQ",
         "props": {
-          "end": { "x": -250.68359375, "y": -44.76171875 },
-          "bend": -114.299716211861,
+          "end": { "x": 381.0607937541139, "y": 155.6664722515823 },
+          "bend": 0,
           "dash": "draw",
           "fill": "none",
           "font": "draw",
@@ -134,48 +134,56 @@
         "rotation": 0,
         "typeName": "shape"
       },
-      "lastChangedClock": 1330
+      "lastChangedClock": 1833
     },
     {
       "state": {
-        "id": "binding:c4umU2GZVJZw1x8MfTKZd",
+        "id": "binding:AKtFtxGIplVYx8xs_7D1N",
         "meta": {},
-        "toId": "shape:r5QtaiovyWzIC1d3ve51A",
+        "toId": "shape:oSV3GkTu9mwmkm9EkXCSu",
         "type": "arrow",
         "props": {
           "isExact": false,
           "terminal": "start",
           "isPrecise": false,
-          "normalizedAnchor": { "x": 0.1940494791666667, "y": 0.6759375 }
+          "normalizedAnchor": {
+            "x": 0.5890789514617293,
+            "y": 0.8441467359713639
+          }
         },
-        "fromId": "shape:K2sRXdNRNTBcPXiP4MOLU",
+        "fromId": "shape:TfFCWRPyef4F9SHj1F9VY",
         "typeName": "binding"
       },
-      "lastChangedClock": 1055
+      "lastChangedClock": 1827
     },
     {
       "state": {
-        "id": "binding:rSSQPeQei_Cta1aLtiy-7",
+        "id": "binding:Vw-vZ1kPvZSTPq-_wACvz",
         "meta": {},
-        "toId": "shape:oSV3GkTu9mwmkm9EkXCSu",
+        "toId": "shape:r5QtaiovyWzIC1d3ve51A",
         "type": "arrow",
         "props": {
           "isExact": false,
           "terminal": "end",
           "isPrecise": false,
           "normalizedAnchor": {
-            "x": 0.9082291666666666,
-            "y": 0.7447786458333333
+            "x": 0.1560270600989816,
+            "y": 0.5946655038593595
           }
         },
-        "fromId": "shape:K2sRXdNRNTBcPXiP4MOLU",
+        "fromId": "shape:TfFCWRPyef4F9SHj1F9VY",
         "typeName": "binding"
       },
-      "lastChangedClock": 1062
+      "lastChangedClock": 1841
     }
   ],
   "tombstones": {
+    "shape:K2sRXdNRNTBcPXiP4MOLU": 1769,
+    "shape:Kga73B6EGexPvYRHopWkx": 1688,
     "shape:p2vi3qkhUojCSx0G4QU66": 1496,
+    "binding:GPja_82OYMTh5kqAUvNhE": 1829,
+    "binding:c4umU2GZVJZw1x8MfTKZd": 1769,
+    "binding:rSSQPeQei_Cta1aLtiy-7": 1769,
     "binding:xi0TdQyOxPBE0nimK5Ft8": 1059
   }
 }
