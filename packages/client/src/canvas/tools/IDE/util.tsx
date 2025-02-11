@@ -24,11 +24,17 @@ export class IDEUtil extends ShapeUtil<IDEShape> {
   static override type = NAME;
   static override props = IDEProps;
 
-  override isAspectRatioLocked(_shape: IDEShape) {
+  override isAspectRatioLocked() {
     return false;
   }
-  override canResize(_shape: IDEShape) {
+  override canResize() {
     return true;
+  }
+
+  // this "catches" the double click and prevents a default action
+  // of adding a text node
+  onDoubleClick(shape: IDEShape) {
+    return shape;
   }
 
   getDefaultProps(): IDEShape["props"] {
@@ -43,7 +49,7 @@ export class IDEUtil extends ShapeUtil<IDEShape> {
     };
   }
 
-  canScroll(_shape: IDEShape): boolean {
+  canScroll(): boolean {
     return true;
   }
 
