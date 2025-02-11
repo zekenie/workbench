@@ -42,7 +42,7 @@ export const IDE: React.FC<IDEProps> = ({
       ...(base[language]?.({ dependencies }) || []),
       EditorView.lineWrapping,
     ];
-  }, [language]);
+  }, [language, dependencies]);
   return (
     <CodeMirror
       value={code}

@@ -3,16 +3,12 @@ import { yamlLanguage } from "@codemirror/lang-yaml";
 import {
   yamlCompletion,
   yamlSchema,
-  yamlSchemaHover,
-  parseYAMLDocumentState,
   yamlSchemaLinter,
 } from "codemirror-json-schema/yaml";
-import { stateExtensions } from "codemirror-json-schema";
 import { linter } from "@codemirror/lint";
 import { JSONSchema7 } from "json-schema";
 import { keymap } from "@codemirror/view";
 import { startCompletion, completionKeymap } from "@codemirror/autocomplete";
-import { start } from "repl";
 
 const jsonSchema: JSONSchema7 = {
   $schema: "http://json-schema.org/draft-07/schema#",

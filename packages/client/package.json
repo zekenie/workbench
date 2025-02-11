@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "copy-types": "cp -r ./node_modules/bun-types public/types/bun-types",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cosmos": "cosmos",
+    "cosmos-export": "cosmos-export"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.2",
@@ -63,6 +65,9 @@
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "postcss": "^8.4.47",
+    "react-cosmos": "^6.2.3",
+    "react-cosmos-plugin-boolean-input": "^6.2.3",
+    "react-cosmos-plugin-vite": "^6.2.0",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
