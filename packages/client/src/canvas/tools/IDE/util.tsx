@@ -5,7 +5,9 @@ import {
   TLResizeInfo,
   getDefaultColorTheme,
   resizeBox,
+  useEditor,
   useIsDarkMode,
+  useValue,
 } from "tldraw";
 import { Badge } from "@/components/ui/badge";
 import { IDEProps } from "./props";
@@ -19,6 +21,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { Preview } from "./components/preview";
 
 export class IDEUtil extends ShapeUtil<IDEShape> {
   static override type = NAME;
@@ -66,9 +69,20 @@ export class IDEUtil extends ShapeUtil<IDEShape> {
     const { vmState } = useRuntimeStateManager();
     const isDarkMode = useIsDarkMode();
     const dependencies = useDependencies(shape.id);
+    const editor = useEditor();
+
+    const zoomLevel = useValue("zoom level", () => editor.getZoomLevel(), [
+      editor,
+    ]);
+
     const theme = getDefaultColorTheme({
       isDarkMode: this.editor.user.getIsDarkMode(),
     });
+
+    if (zoomLevel < 0.5) {
+      // Render simplified version when zoomed out
+      return <Preview shape={shape} theme={theme} />;
+    }
 
     return (
       <>

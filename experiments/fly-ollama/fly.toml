@@ -1,0 +1,26 @@
+app = "ollama-zeke"
+primary_region = "ord"
+
+[build]
+  image = "ollama/ollama"
+
+[env]
+  OLLAMA_HOST = "0.0.0.0:11434"
+
+[http_service]
+  internal_port = 11434
+  force_https = false
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm.mounts]]
+  source = "ollama_models"
+  destination = "/root/.ollama"
+
+[vm]
+  gpu_kind = "a10"
+  gpus = 1
+  cpu_kind = "performance"
+  memory_mb = 16384
