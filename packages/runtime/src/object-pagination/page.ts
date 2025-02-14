@@ -1,54 +1,38 @@
-interface StringPreview {
-  type: "string";
-  value: string;
-  isTruncated: boolean;
-  fullLength: number;
-}
+import {
+  createStringPreview,
+  createDatePreview,
+  type Preview,
+  PreviewSchema,
+} from "./preview";
+import { Type, type Static } from "@sinclair/typebox";
 
-interface DatePreview {
-  type: "date";
-  value: string; // ISO string representation
-  timestamp: number; // Unix timestamp
-}
-
-export interface ObjectPreviewItem {
-  key: string;
-  value: string;
-  type: string;
-}
-
-export interface ObjectPreview {
-  type: "preview";
-  constructor: string;
-  size: number;
-  preview: ObjectPreviewItem[];
-  hasMore: boolean;
-}
-
-export interface ObjectKey {
+export const ObjectKeySchema = Type.Object({
   /**
    * e.g. profile.settings.notifications
    */
-  path: string;
+  path: Type.String(),
   /**
    * null | string | undefined | date | array | etc. basically `typeof`
    */
-  type: string;
+  type: Type.String(),
   /**
    * Info needed to represent this object in developer tools style
    */
-  preview: ObjectPreview | null;
-}
+  preview: PreviewSchema,
+});
 
-export type PageJSON = {
-  items: ObjectKey[];
-  nextToken?: string;
-  hasNextPage: boolean;
-};
+export const PageJSONSchema = Type.Object({
+  items: Type.Array(ObjectKeySchema),
+  nextToken: Type.Optional(Type.String()),
+  hasNextPage: Type.Boolean(),
+});
+
+export type ObjectKey = Static<typeof ObjectKeySchema>;
+export type PageJSON = Static<typeof PageJSONSchema>;
 
 class SerializedValue<T extends Object> {
   readonly type: string;
-  readonly preview: ObjectPreview | null;
+  readonly preview: Preview;
   readonly value: any;
 
   constructor(
@@ -58,24 +42,6 @@ class SerializedValue<T extends Object> {
     this.type = this.getValueType(rawValue);
     this.value = this.serializeValue(rawValue);
     this.preview = this.createPreview(rawValue);
-  }
-
-  private createStringPreview(value: string): StringPreview {
-    const maxLength = 20;
-    return {
-      type: "string",
-      value: value.length > maxLength ? value.slice(0, maxLength) : value,
-      isTruncated: value.length > maxLength,
-      fullLength: value.length,
-    };
-  }
-
-  private createDatePreview(value: Date): DatePreview {
-    return {
-      type: "date",
-      value: value.toISOString(),
-      timestamp: value.getTime(),
-    };
   }
 
   private getValueType(value: any): string {
@@ -102,15 +68,13 @@ class SerializedValue<T extends Object> {
     return undefined;
   }
 
-  private createPreview(
-    value: any,
-  ): ObjectPreview | StringPreview | DatePreview | any {
+  private createPreview(value: any): Preview {
     if (typeof value === "string") {
-      return this.createStringPreview(value);
+      return createStringPreview(value);
     }
 
     if (value instanceof Date) {
-      return this.createDatePreview(value);
+      return createDatePreview(value);
     }
 
     if (typeof value !== "object" || value === null) {
@@ -118,17 +82,17 @@ class SerializedValue<T extends Object> {
     }
 
     const keys = Object.keys(value);
-    const preview = keys.slice(0, 3).map((key) => ({
+    const keyPreviews = keys.slice(0, 3).map((key) => ({
       key,
       value: this.createValuePreview(value[key]),
       type: this.getValueType(value[key]),
     }));
 
     return {
-      type: "preview",
+      type: "object",
       constructor: value.constructor.name,
       size: keys.length,
-      preview,
+      keyPreviews,
       hasMore: keys.length > 3,
     };
   }

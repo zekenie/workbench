@@ -7,17 +7,20 @@ primary_region = "ord"
 [env]
   OLLAMA_HOST = "0.0.0.0:11434"
 
+
 [http_service]
   internal_port = 11434
   force_https = false
-  auto_stop_machines = false
-  auto_start_machines = false
-  min_machines_running = 1
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
   processes = ["app"]
+  internal_only = true
 
-[[vm.mounts]]
-  source = "ollama_models"
-  destination = "/root/.ollama"
+[mounts]
+    source = "models"
+    destination = "/root/.ollama"
+    initial_size = "10gb"
 
 [vm]
   gpu_kind = "a10"

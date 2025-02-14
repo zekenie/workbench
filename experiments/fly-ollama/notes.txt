@@ -1,0 +1,200 @@
+```bash
+# 1. Create new app
+fly apps create your-ollama
+
+# 2. Create a volume (40GB in Chicago)
+fly volumes create ollama_zeke --region ord --size 40
+
+# 3. Create fly.toml configuration file
+cat > fly.toml << 'EOF'
+app = "your-ollama"
+primary_region = "ord"
+
+[build]
+  image = "ollama/ollama"
+
+[env]
+  OLLAMA_HOST = "0.0.0.0:11434"
+
+[http_service]
+  internal_port = 11434
+  force_https = false
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm.mounts]]
+  source = "ollama_zeke"
+  destination = "/root/.ollama"
+
+[vm]
+  gpu_kind = "a10"
+  gpus = 1
+  cpu_kind = "performance"
+  memory_mb = 8192
+EOF
+
+# 4. Deploy the app
+fly deploy
+
+# 5. Allocate IP address
+fly ips allocate-v4
+
+# 6. SSH into the machine to pull models
+fly ssh console
+
+# Inside the console:
+ollama pull llama2
+ollama pull mistral
+# etc...
+```
+
+To monitor:
+```bash
+# Check app status
+fly status
+
+# Check volume
+fly volumes list
+
+# View logs
+fly logs
+
+# Monitor resources
+fly metrics
+```
+
+Benefits of using the CLI:
+1. Simpler syntax
+2. Built-in deployment tracking
+3. Easy access to logs
+4. Simpler volume management
+5. Built-in SSH access
+
+Would you like me to:
+1. Add specific models to pull?
+2. Modify the resource allocation?
+3. Add health checks to the configuration?
+4. Set up any specific environment variables?
+
+just one more thing how do i hit it i don't want it on the public internet can i use fly proxy 
+
+```md fly-docs/flyctl/cmd/fly_proxy.md
+Proxies connections to a Fly Machine through a WireGuard tunnel. By default,
+connects to the first Machine address returned by an internal DNS query on the app.
+
+## Usage
+~~~
+fly proxy <local:remote> [remote_host] [flags]
+~~~
+
+## Options
+
+~~~
+  -a, --app string         Application name
+  -b, --bind-addr string   Local address to bind to (default "127.0.0.1")
+  -c, --config string      Path to application configuration file
+  -h, --help               help for proxy
+  -o, --org string         The target Fly.io organization
+  -q, --quiet              Don't print progress indicators for WireGuard
+  -s, --select             Prompt to select from available Machines from the current application
+      --watch-stdin        Watches stdin and terminates once it gets closed
+~~~
+
+## Global Options
+
+~~~
+  -t, --access-token string   Fly API Access Token
+      --debug                 Print additional logs and traces
+      --verbose               Verbose output
+~~~
+
+## See Also
+
+* [fly](/docs/flyctl/help/)	 - The Fly.io command line interface
+
+```
+
+
+
+Yes! You can use `fly proxy` to securely access your Ollama instance through a WireGuard tunnel. Here's how:
+
+```bash
+# Proxy local port 11434 to the remote Ollama instance
+fly proxy 11434:11434 -a your-ollama
+
+# In another terminal, you can now use Ollama at localhost:11434
+export OLLAMA_HOST=http://localhost:11434
+
+# Test the connection
+curl http://localhost:11434/api/tags
+```
+
+For persistent use, you might want to create a simple script:
+
+```bash
+#!/bin/bash
+# start-ollama.sh
+
+# Start the proxy in the background
+fly proxy 11434:11434 -a your-ollama &
+PROXY_PID=$!
+
+# Export the Ollama host
+export OLLAMA_HOST=http://localhost:11434
+
+# Wait a moment for the proxy to establish
+sleep 2
+
+echo "Ollama proxy running. Use OLLAMA_HOST=$OLLAMA_HOST"
+echo "To stop, run: kill $PROXY_PID"
+
+# Keep the script running
+wait $PROXY_PID
+```
+
+This approach:
+1. Keeps your Ollama instance private (not exposed to internet)
+2. Uses Fly.io's secure WireGuard tunnel
+3. Makes the instance appear as if it's running locally
+4. Works with any Ollama client/SDK
+
+Would you like me to:
+1. Show how to set up multiple proxies for different ports?
+2. Create a more robust script with error handling?
+3. Show how to use this with specific Ollama clients?
+
+
+zekenierenberg@Zekes-MacBook-Pro.local:~/code/canvas-ide/experiments/fly-ollama (main*) $ fly deploy
+==> Verifying app config
+Validating /Users/zekenierenberg/code/canvas-ide/experiments/fly-ollama/fly.toml
+✓ Configuration is valid
+--> Verified app config
+==> Building image
+Searching for image 'ollama/ollama' remotely...
+image found: img_lj9x4d7ly1wx4wo1
+
+Watch your deployment at https://fly.io/apps/ollama-zeke/monitoring
+
+This deployment will:
+ * create 2 "app" machines
+
+No machines in group app, launching a new machine
+
+-------
+ ✖ Failed: error creating a new machine: failed to launch VM: Your organization is not al…
+-------
+Error: error creating a new machine: failed to launch VM: Your organization is not allowed to use GPU machines. Please contact billing@fly.io (Request ID: 01JKVH1VSM9ZWD1MWV5PNT6PMY-chi) (Trace ID: 1a5a9d6db89cf64c70a36f74ba5de286)
+zekenierenberg@Zekes-MacBook-Pro.local:~/code/canvas-ide/experiments/fly-ollama (main*) $
+
+
+
+
+
+
+
+https://community.fly.io/t/failed-to-update-vm-your-organization-is-not-allowed-to-use-gpu-machines/23786
+
+
+https://mail.google.com/mail/u/0/#sent/QgrcJHrnsbjtZGKKdZMvrFDHcfLgxMNVDkV

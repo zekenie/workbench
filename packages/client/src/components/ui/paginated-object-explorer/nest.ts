@@ -1,11 +1,12 @@
-import { Page } from "./page";
 import { Type, type Static } from "@sinclair/typebox";
+import { PageJSON } from "./types";
+import { keyBy } from "lodash-es";
 
 export const SerializedObjectPreviewSchema = Type.Object({
   type: Type.Literal("preview"),
   constructor: Type.String(),
   size: Type.Number(),
-  preview: Type.Array(
+  keyPreviews: Type.Array(
     Type.Object({
       key: Type.String(),
       value: Type.String(),
@@ -15,28 +16,26 @@ export const SerializedObjectPreviewSchema = Type.Object({
   hasMore: Type.Boolean(),
 });
 
-// This needs to be defined using Type.Recursive due to its self-referential nature
-export const NestedObjectKeySchema = Type.Recursive((self) =>
-  Type.Object({
-    children: Type.Record(
-      Type.String(),
-      Type.Object({
-        children: Type.Record(Type.String(), self),
-        path: Type.Optional(Type.String()),
-        type: Type.Optional(Type.String()),
-        preview: Type.Optional(
-          Type.Union([SerializedObjectPreviewSchema, Type.Null()]),
-        ),
-      }),
+export const NestedObjectKeySchema = Type.Recursive((self) => {
+  return Type.Object({
+    children: Type.Record(Type.String(), self),
+    path: Type.Optional(Type.String()),
+    type: Type.Optional(Type.String()),
+    preview: Type.Optional(
+      Type.Union([SerializedObjectPreviewSchema, Type.Null()]),
     ),
-  }),
-);
+  });
+});
 
 export type NestedObjectKey = Static<typeof NestedObjectKeySchema>;
 
-export function nestPage(page: Page) {
-  return page.toJSON().items.reduce(
-    (acc: NestedObjectKey, item) => {
+export function nestPage(page: PageJSON): NestedObjectKey {
+  const itemsByPath = keyBy(page.items, "path");
+
+  console.log(itemsByPath);
+
+  return page.items.reduce(
+    (acc, item) => {
       const path = item.path.split(".");
       const lastSegment = path[path.length - 1];
       let pointer = acc;
@@ -46,7 +45,7 @@ export function nestPage(page: Page) {
 
         // Create intermediate node if it doesn't exist
         if (!pointer.children[pathSegment]) {
-          // @ts-ignore
+          // @ts-expect-error - eh
           pointer.children[pathSegment] = {
             children: {},
             ...(isLastSegment ? item : {}), // Only add item properties if it's the last segment
@@ -57,10 +56,11 @@ export function nestPage(page: Page) {
         pointer = pointer.children[pathSegment];
       }
 
-      return acc as NestedObjectKey;
+      return acc;
     },
     {
       children: {},
+      ...(itemsByPath[""] || {}),
     } as NestedObjectKey,
   );
 }

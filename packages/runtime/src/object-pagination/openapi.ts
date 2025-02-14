@@ -1,11 +1,11 @@
-import { SerializedObjectPreviewSchema, NestedObjectKeySchema } from "./nest";
+import { PageJSONSchema, ObjectKeySchema } from "./page";
 import { Type } from "@sinclair/typebox";
+import { PreviewSchema } from "./preview";
 
 /**
  * Returns OpenAPI components that can be merged into a larger OpenAPI spec
  *
  * @example:
- *
  * ```typescript
  * const apiSpec = {
  *   openapi: '3.0.0',
@@ -18,7 +18,7 @@ import { Type } from "@sinclair/typebox";
  *       get: {
  *         summary: 'My endpoint',
  *         responses: {
- *           '200': getNestedObjectResponse('Custom description')
+ *           '200': getPageResponse('Custom description')
  *         }
  *       }
  *     }
@@ -32,17 +32,17 @@ import { Type } from "@sinclair/typebox";
 export function getOpenAPIComponents() {
   return {
     schemas: {
-      SerializedObjectPreview: Type.Object(SerializedObjectPreviewSchema),
-      NestedObjectKey: Type.Object(NestedObjectKeySchema),
+      Page: Type.Object(PageJSONSchema),
+      ObjectKey: Type.Object(ObjectKeySchema),
+      Preview: PreviewSchema,
     },
   } as const;
 }
 
 /**
- * Returns a reusable OpenAPI response object for the nested object
+ * Returns a reusable OpenAPI response object for the Page
  * @param description Custom description for the response
  * @example:
- *
  * ```typescript
  * const apiSpec = {
  *   openapi: '3.0.0',
@@ -55,7 +55,7 @@ export function getOpenAPIComponents() {
  *       get: {
  *         summary: 'My endpoint',
  *         responses: {
- *           '200': getNestedObjectResponse('Custom description')
+ *           '200': getPageResponse('Custom description')
  *         }
  *       }
  *     }
@@ -66,13 +66,13 @@ export function getOpenAPIComponents() {
  * }
  * ```
  */
-export function getNestedObjectResponse(description = "Successful response") {
+export function getPageResponse(description = "Successful response") {
   return {
     description,
     content: {
       "application/json": {
         schema: {
-          $ref: "#/components/schemas/NestedObjectKey",
+          $ref: "#/components/schemas/Page",
         },
       },
     },

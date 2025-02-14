@@ -9,7 +9,7 @@ type DigestFormat = "hex" | "base64";
 function hashString(
   input: string,
   algorithm: HashAlgorithm = "sha256",
-  encoding: DigestFormat = "hex"
+  encoding: DigestFormat = "hex",
 ): string {
   return createHash(algorithm).update(input).digest(encoding);
 }
@@ -22,6 +22,7 @@ export async function updateSnapshot({
   snapshot: RoomSnapshot;
 }) {
   return prisma.$transaction(async () => {
+    console.log("WE GETHERE");
     const { currentSnapshot } = await prisma.canvas.findFirstOrThrow({
       where: { id },
       select: { currentSnapshot: true },

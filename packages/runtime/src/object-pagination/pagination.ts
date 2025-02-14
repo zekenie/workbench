@@ -30,6 +30,8 @@ export default function createPage<T>({
     currentItr = gen.next();
   }
 
+  page.add("", object);
+
   // as long as there's more of the object and there's room left in the page
   while (!currentItr.done) {
     if (page.isFull) {

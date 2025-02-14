@@ -1,4 +1,4 @@
-export function* breadthFirstKeys(obj) {
+export function* breadthFirstKeys<T extends Record<string, T>>(obj: T) {
   if (!obj || typeof obj !== "object") return;
 
   // Keep track of levels to maintain breadth-first order
@@ -50,7 +50,7 @@ export function primeUntil<T, TReturn, TNext>(
   return;
 }
 
-export function* depthFirstKeys(obj) {
+export function* depthFirstKeys<T extends Record<string, T>>(obj: T) {
   if (!obj || typeof obj !== "object") return;
 
   // Stack to maintain depth-first order

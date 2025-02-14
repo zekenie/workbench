@@ -1,0 +1,17 @@
+{
+  "auth_config": {
+    "object": "auth_config",
+    "id": "aac_2mvmyP9dVn67vHkqiwUkxcir4ya",
+    "first_name": "required",
+    "last_name": "required",
+    "email_address": "on",
+    "phone_number": "off",
+    "username": "off"
+  },
+  "maintenance_mode": false,
+  "interested_in": [
+    { "id": "1234", "topic": "cats" },
+    { "id": "1235", "topic": "tax law" },
+    { "id": "1235", "topic": "cat tax law" }
+  ]
+}
