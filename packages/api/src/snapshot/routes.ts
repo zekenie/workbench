@@ -3,7 +3,7 @@ import { Delta } from "jsondiffpatch";
 import { last } from "lodash-es";
 import { authMiddleware } from "../auth/middleware";
 import { prisma } from "../db";
-import pubsub, { publish } from "../lib/pubsub";
+import pubsub, { bulkPublish } from "../lib/pubsub";
 import { updateSnapshot } from "./service";
 import { EventEmitter, on } from "node:events";
 import { createTicker } from "../lib/ticker";
@@ -158,17 +158,24 @@ export const snapshotRoutes = new Elysia({
   .post(
     "/snapshot",
     async ({ body }) => {
-      const { canvasId, clock, digest } = await updateSnapshot({
+      const { canvasId, clock, digest, changedNodes } = await updateSnapshot({
         id: body.id,
         snapshot: body.snapshot as any,
       });
 
-      await publish({
-        event: "canvas.snapshot",
-        canvasId,
-        clock,
-        digest,
-      });
+      await bulkPublish([
+        {
+          event: "canvas.snapshot",
+          canvasId,
+          clock,
+          digest,
+        },
+        ...changedNodes.map((change) => ({
+          event: "canvas.node.change",
+          canvasId,
+          nodeId: change.id,
+        })),
+      ]);
     },
     {
       auth: "api",

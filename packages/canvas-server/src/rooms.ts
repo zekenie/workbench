@@ -10,7 +10,7 @@ import { createAuthenticatedClient } from "./backend-server";
 // For this example we're just saving data to the local filesystem
 // const DIR = "./.rooms";
 async function readSnapshotIfExists(
-  roomId: string
+  roomId: string,
 ): Promise<RoomSnapshot | undefined> {
   const { data, error } = await apiClient.snapshots.snapshot.get({
     query: {
@@ -25,15 +25,17 @@ async function readSnapshotIfExists(
   }
   return undefined;
 }
-console.log("Bun env:", Bun.env.API_ID, Bun.env.API_SECRET);
+
 const apiClient = createAuthenticatedClient(Bun.env.API_ID, Bun.env.API_SECRET);
 
 async function saveSnapshot(roomId: string, snapshot: RoomSnapshot) {
-  await apiClient.snapshots.snapshot.post({
+  console.log("ABOUT TO SAVE");
+  const { error } = await apiClient.snapshots.snapshot.post({
     id: roomId,
     // @ts-ignore
     snapshot,
   });
+  console.error(error?.value);
 }
 
 // We'll keep an in-memory map of rooms and their data
@@ -70,7 +72,6 @@ export async function makeOrLoadRoom(roomId: string) {
       }
       console.log("loading room", roomId);
       const initialSnapshot = await readSnapshotIfExists(roomId);
-      console.log(initialSnapshot);
 
       const roomState: RoomState = {
         needsPersist: false,

@@ -62,7 +62,7 @@ describe("canvases", () => {
     it("lists records belonging to you when they exist ", async () => {
       const { jwt, user } = await worldSetup();
       await createCanvas({ userId: user.id, title: "foobar" });
-      const { data, error } = await apiClient.canvases.list.get({
+      const { data } = await apiClient.canvases.list.get({
         query: {
           skip: 0,
           take: 10,

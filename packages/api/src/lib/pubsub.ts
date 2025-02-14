@@ -14,7 +14,9 @@ export default pubsub as Omit<typeof pubsub, "publish">;
 
 export const pubsubWithPublish = pubsub;
 
-export async function publish(...args: Parameters<(typeof pubsub)["publish"]>) {
+type PublishArgs = Parameters<(typeof pubsub)["publish"]>;
+
+export async function publish(...args: PublishArgs) {
   const [event] = args;
   await prisma.event.create({
     data: {
@@ -23,5 +25,16 @@ export async function publish(...args: Parameters<(typeof pubsub)["publish"]>) {
       timestamp: event.timestamp || new Date(),
       payload: event,
     },
+  });
+}
+
+export async function bulkPublish(events: PublishArgs[0][]) {
+  await prisma.event.createMany({
+    data: events.map((event) => ({
+      eventId: event.eventId || randomUUIDv7(),
+      event: event.event,
+      timestamp: event.timestamp || new Date(),
+      payload: event,
+    })),
   });
 }
