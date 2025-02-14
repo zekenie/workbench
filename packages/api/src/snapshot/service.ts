@@ -1,4 +1,4 @@
-import { compare } from "fast-json-patch";
+import { diff } from "jsondiffpatch";
 import { RoomSnapshot } from "@tldraw/sync-core";
 import { prisma } from "../db";
 import { createHash } from "crypto";
@@ -22,17 +22,16 @@ export async function updateSnapshot({
   snapshot: RoomSnapshot;
 }) {
   return prisma.$transaction(async () => {
-    console.log("WE GETHERE");
     const { currentSnapshot } = await prisma.canvas.findFirstOrThrow({
       where: { id },
       select: { currentSnapshot: true },
     });
 
-    const diff = compare(currentSnapshot || {}, snapshot);
+    const diffResult = diff(currentSnapshot || {}, snapshot);
 
     const snap = {
       canvasId: id,
-      patches: diff as any,
+      patches: diffResult as any,
       clock: snapshot.clock,
       digest: hashString(JSON.stringify(snapshot)),
     };

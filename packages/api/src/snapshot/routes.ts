@@ -1,9 +1,8 @@
 import Elysia, { t } from "elysia";
-import { Operation } from "fast-json-patch";
+import { Delta } from "jsondiffpatch";
 import { last } from "lodash-es";
 import { authMiddleware } from "../auth/middleware";
 import { prisma } from "../db";
-import { faktoryClient } from "../lib/jobs";
 import pubsub, { publish } from "../lib/pubsub";
 import { updateSnapshot } from "./service";
 import { EventEmitter, on } from "node:events";
@@ -18,7 +17,7 @@ type PatchEvents =
     }
   | {
       type: "patch";
-      patch: Operation;
+      patch: Delta;
     }
   | {
       type: "tick";
@@ -73,9 +72,7 @@ export const snapshotRoutes = new Elysia({
         });
 
         for (const snapshot of snapshotRecords) {
-          for (const op of snapshot.patches as unknown as Operation[]) {
-            yield { type: "patch", patch: op };
-          }
+          yield { type: "patch", patch: snapshot.patches as Delta };
           if (snapshot === last(snapshotRecords)) {
             yield { type: "digest", digest: snapshot.digest };
           }
@@ -108,9 +105,10 @@ export const snapshotRoutes = new Elysia({
             return;
           }
 
-          for (const op of snap.patches as unknown as Operation[]) {
-            emitter.emit("message", { type: "patch", patch: op });
-          }
+          emitter.emit("message", {
+            type: "patch",
+            patch: snap.patches as Delta,
+          });
           emitter.emit("message", { type: "digest", digest: snap.digest });
         }
       });
@@ -135,7 +133,7 @@ export const snapshotRoutes = new Elysia({
           .Decode((value) => parseInt(value))
           .Encode((value) => value.toString()),
       }),
-    }
+    },
   )
   .get(
     "/snapshot",
@@ -155,7 +153,7 @@ export const snapshotRoutes = new Elysia({
       query: t.Object({
         id: t.String(),
       }),
-    }
+    },
   )
   .post(
     "/snapshot",
@@ -183,5 +181,5 @@ export const snapshotRoutes = new Elysia({
           }),
         ]),
       }),
-    }
+    },
   );

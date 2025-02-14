@@ -49,7 +49,7 @@ describe("snapshots", () => {
         },
         {
           ...configureAuthenticatedRequest({ jwt }),
-        }
+        },
       );
       expect(status).toBe(401);
     });
@@ -74,7 +74,7 @@ describe("snapshots", () => {
             "x-api-secret": "foo",
             "x-api-id": apiToken.id,
           },
-        }
+        },
       );
 
       expect(status).toBe(200);
@@ -122,7 +122,7 @@ describe("snapshots", () => {
 
       const { data } = await apiClient.canvases.create.post(
         {},
-        { ...configureAuthenticatedRequest({ jwt }) }
+        { ...configureAuthenticatedRequest({ jwt }) },
       );
 
       const canvasId = data?.id;
@@ -142,7 +142,7 @@ describe("snapshots", () => {
               "x-api-secret": "foo",
               "x-api-id": apiToken.id,
             },
-          }
+          },
         );
 
         expect(status).toEqual(200);
@@ -167,15 +167,12 @@ describe("snapshots", () => {
       if (!streamData || !("next" in streamData)) {
         throw new Error("no stream");
       }
-      const patches = await collectNPatches(streamData, 7);
+      const patches = await collectNPatches(streamData, 4);
 
       expect(patches).toEqual([
-        { type: "patch", patch: { op: "add", path: "/clock", value: 1 } },
-        { type: "patch", patch: { op: "add", path: "/other", value: 1 } },
-        { type: "patch", patch: { op: "replace", path: "/other", value: 2 } },
-        { type: "patch", patch: { op: "replace", path: "/clock", value: 2 } },
-        { type: "patch", patch: { op: "replace", path: "/other", value: 3 } },
-        { type: "patch", patch: { op: "replace", path: "/clock", value: 3 } },
+        { type: "patch", patch: { clock: [1], other: [1] } },
+        { type: "patch", patch: { clock: [1, 2], other: [1, 2] } },
+        { type: "patch", patch: { clock: [2, 3], other: [2, 3] } },
         { type: "digest", digest: expect.any(String) },
       ]);
     });
@@ -190,7 +187,7 @@ describe("snapshots", () => {
 
       const { data } = await apiClient.canvases.create.post(
         {},
-        { ...configureAuthenticatedRequest({ jwt }) }
+        { ...configureAuthenticatedRequest({ jwt }) },
       );
 
       const canvasId = data?.id;
@@ -210,7 +207,7 @@ describe("snapshots", () => {
               "x-api-secret": "foo",
               "x-api-id": apiToken.id,
             },
-          }
+          },
         );
       }
 
@@ -231,15 +228,14 @@ describe("snapshots", () => {
       if (!streamData || !("next" in streamData)) {
         throw new Error("no stream");
       }
-      const patches = await collectNPatches(streamData, 3);
+      const patches = await collectNPatches(streamData, 2);
 
       expect(patches).toEqual([
-        { type: "patch", patch: { op: "replace", path: "/other", value: 3 } },
-        { type: "patch", patch: { op: "replace", path: "/clock", value: 3 } },
+        { type: "patch", patch: { clock: [2, 3], other: [2, 3] } },
         { type: "digest", digest: expect.any(String) },
       ]);
     });
-    it.only("streams patches as they happen", async () => {
+    it("streams patches as they happen", async () => {
       const outboxPromise = startProcess();
       const { jwt } = await worldSetup();
       const apiToken = await prisma.apiToken.create({
@@ -250,7 +246,7 @@ describe("snapshots", () => {
 
       const { data } = await apiClient.canvases.create.post(
         {},
-        { ...configureAuthenticatedRequest({ jwt }) }
+        { ...configureAuthenticatedRequest({ jwt }) },
       );
 
       const canvasId = data?.id;
@@ -281,7 +277,7 @@ describe("snapshots", () => {
             "x-api-secret": "foo",
             "x-api-id": apiToken.id,
           },
-        }
+        },
       );
 
       expect(status).toBe(200);
@@ -292,11 +288,10 @@ describe("snapshots", () => {
         throw new Error("no stream");
       }
 
-      const patches = await collectNPatches(streamData, 3);
+      const patches = await collectNPatches(streamData, 2);
 
       expect(patches).toEqual([
-        { type: "patch", patch: { op: "add", path: "/clock", value: 1 } },
-        { type: "patch", patch: { op: "add", path: "/other", value: 1 } },
+        { type: "patch", patch: { clock: [1], other: [1] } },
         { type: "digest", digest: expect.any(String) },
       ]);
 

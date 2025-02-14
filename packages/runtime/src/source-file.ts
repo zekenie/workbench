@@ -1,6 +1,5 @@
 import type { RoomSnapshot } from "@tldraw/sync-core";
-import type { Operation } from "fast-json-patch";
-import { applyPatch } from "fast-json-patch";
+import { patch, type Delta } from "jsondiffpatch";
 
 const defaultDocument = { clock: 0, documents: [] as never[] } as const;
 
@@ -66,8 +65,7 @@ export class SourceFile {
     await Bun.write(this.file, this.json);
   };
 
-  patch(patch: Operation[]) {
-    this._snapshot = applyPatch(this._snapshot || { ...defaultDocument }, patch)
-      .newDocument as RoomSnapshot;
+  patch(delta: Delta) {
+    this._snapshot = patch(this._snapshot, delta) as RoomSnapshot;
   }
 }

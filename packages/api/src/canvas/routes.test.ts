@@ -62,7 +62,7 @@ describe("canvases", () => {
     it("lists records belonging to you when they exist ", async () => {
       const { jwt, user } = await worldSetup();
       await createCanvas({ userId: user.id, title: "foobar" });
-      const { data } = await apiClient.canvases.list.get({
+      const { data, error } = await apiClient.canvases.list.get({
         query: {
           skip: 0,
           take: 10,
@@ -103,7 +103,7 @@ describe("canvases", () => {
           title: "a canvas!",
           description: "it is what it is",
         },
-        { ...configureAuthenticatedRequest({ jwt }) }
+        { ...configureAuthenticatedRequest({ jwt }) },
       );
       expect(data).toMatchObject({
         id: expect.any(String),
@@ -114,7 +114,7 @@ describe("canvases", () => {
       const { jwt, user } = await worldSetup();
       const { data } = await apiClient.canvases.create.post(
         {},
-        { ...configureAuthenticatedRequest({ jwt }) }
+        { ...configureAuthenticatedRequest({ jwt }) },
       );
 
       const accessRecords = await prisma.canvasAccess.findMany();
