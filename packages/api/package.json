@@ -1,6 +1,7 @@
 {
   "name": "server",
   "version": "1.0.50",
+  "type": "module",
   "scripts": {
     "test": "bun --env-file=./.env.test test",
     "dev": "bun --inspect --watch src/dev.meta-process.ts",
@@ -25,7 +26,7 @@
     "@elysiajs/swagger": "^1.1.5",
     "@lucia-auth/adapter-prisma": "^4.0.1",
     "@prisma/client": "^6.1.0",
-    "@tldraw/sync-core": "^3.4.1",
+    "@tldraw/sync-core": "^3.8.1",
     "@types/bun": "^1.1.13",
     "@types/lodash-es": "^4.17.12",
     "@urql/core": "^5.1.0",

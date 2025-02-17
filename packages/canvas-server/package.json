@@ -1,13 +1,14 @@
 {
   "name": "canvas-server",
+  "type": "module",
   "version": "1.0.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/server.bun.ts"
   },
   "dependencies": {
-    "@tldraw/sync-core": "^3.4.1",
-    "@tldraw/tlschema": "^3.4.1",
+    "@tldraw/sync-core": "^3.8.1",
+    "@tldraw/tlschema": "^3.8.1",
     "itty-router": "^5.0.18",
     "unfurl.js": "^6.4.0",
     "tools": "workspace:*"

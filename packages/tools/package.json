@@ -14,14 +14,14 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @tldraw/tlschema && tsc",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@tldraw/tlschema": "^3.5.1"
+    "@tldraw/tlschema": "^3.8.1"
   },
   "devDependencies": {
-    "@tldraw/tlschema": "^3.5.1"
+    "@tldraw/tlschema": "^3.8.1"
   }
 }

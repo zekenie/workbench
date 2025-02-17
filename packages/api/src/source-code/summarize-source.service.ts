@@ -1,12 +1,14 @@
 import type { RoomSnapshot } from "@tldraw/sync-core";
 import { prisma } from "../db";
 import { type ide } from "tools";
-import { randomUUIDv7 } from "bun";
 import { parseHTML } from "linkedom";
 import { Prompt } from "prompt-def";
 import { z } from "zod";
 
 const summarizeSourcePrompt = new Prompt({
+  config: {
+    model: "claude-3-5-sonnet-latest",
+  },
   name: "summarize-source",
   input: z.object({ code: z.string() }),
   output: z.string(),
@@ -473,6 +475,8 @@ export async function summarizeSource({
   });
 
   const { analysis, reasoning } = parseClaudeOutput(output);
+
+  console.log({ analysis, reasoning });
 
   // do something with it?
   // return await prisma.sourceCodeSummary.create({

@@ -1,6 +1,7 @@
 {
   "name": "dependencies",
   "type": "module",
+  "private": true,
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -20,7 +21,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@tldraw/tldraw": "^3.5.1",
+    "@tldraw/tldraw": "^3.8.1",
     "@types/lodash-es": "^4.17.12",
     "lodash-es": "^4.17.21"
   }

@@ -1,30 +1,9 @@
-import { TLBaseShape, TLDefaultColorStyle } from "@tldraw/tldraw";
+import { ide } from "tools";
 
-export type Language =
-  | "ts"
-  | "md"
-  | "sql"
-  | "http"
-  | "graphql"
-  | "json"
-  | "yaml"
-  | "toml";
+export type Language = ide.Language;
 
-export const NAME = "IDE" as const;
-export type IDEShape = TLBaseShape<
-  typeof NAME,
-  {
-    w: number;
-    h: number;
-    color: TLDefaultColorStyle;
-    title: string;
-    code: string;
-    language: Language;
-
-    // not really optional just too lazy to write migration
-    private?: boolean;
-  }
->;
+export const NAME = ide.NAME;
+export type IDEShape = ide.IDEShape;
 
 type CssClass = string;
 export const languageClasses: Record<Language, CssClass> = {

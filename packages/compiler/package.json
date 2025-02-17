@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tldraw/sync-core": "^3.5.1",
+    "@tldraw/sync-core": "^3.8.1",
     "@types/lodash-es": "^4.17.12",
     "bun": "^1.1.38",
     "dependencies": "workspace:*",
@@ -26,7 +26,7 @@
     "ts-morph": "^24.0.0"
   },
   "devDependencies": {
-    "@tldraw/tldraw": "^3.5.1",
+    "@tldraw/tldraw": "^3.8.1",
     "@types/bun": "latest",
     "bun-types": "^1.1.38",
     "prettier": "^3.4.2",

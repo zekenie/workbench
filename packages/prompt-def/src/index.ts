@@ -56,7 +56,7 @@ export class Prompt<I, O> {
     });
 
     const response = await this.anthropic.messages.create({
-      model: this.definition.config?.model ?? "claude-3-sonnet",
+      model: this.definition.config?.model ?? "claude-3-sonnet-20240229",
       temperature: this.definition.config?.temperature ?? 1,
       max_tokens: this.definition.config?.maxTokens ?? 4096,
       messages: [{ role: "user", content: prompt }],
