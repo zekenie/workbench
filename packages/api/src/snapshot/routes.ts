@@ -7,6 +7,7 @@ import pubsub, { bulkPublish } from "../lib/pubsub";
 import { updateSnapshot } from "./service";
 import { EventEmitter, on } from "node:events";
 import { createTicker } from "../lib/ticker";
+import { Event } from "event-schemas";
 
 const ticker = createTicker(1000);
 
@@ -170,11 +171,16 @@ export const snapshotRoutes = new Elysia({
           clock,
           digest,
         },
-        ...changedNodes.map((change) => ({
-          event: "canvas.node.change",
-          canvasId,
-          nodeId: change.id,
-        })),
+        ...changedNodes.map(
+          (change) =>
+            ({
+              event: "canvas.node-change",
+              canvasId,
+              nodeId: change.id,
+              typeName: change.typeName,
+              type: change.type,
+            }) as Event,
+        ),
       ]);
     },
     {

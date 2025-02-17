@@ -2,7 +2,6 @@ import { PubSub } from "pubsub";
 import events from "event-schemas";
 import { prisma } from "../db";
 import { randomUUIDv7 } from "bun";
-import { createCanvas } from "../canvas/service";
 
 const pubsub = new PubSub(Bun.env.REDIS_URL, events, {
   crossPublish: ["canvasId"],

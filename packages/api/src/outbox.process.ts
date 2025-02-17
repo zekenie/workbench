@@ -15,7 +15,7 @@ async function selectPendingEventIds() {
     SELECT "eventId"
     FROM "Event"
     WHERE status = 'PENDING'
-    ORDER BY "timestamp" 
+    ORDER BY "timestamp"
     LIMIT 100
     FOR UPDATE SKIP LOCKED
   `;

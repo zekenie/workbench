@@ -26,7 +26,7 @@ export async function updateSnapshot({
   patches: ObjectDelta;
   clock: number;
   digest: string;
-  changedNodes: { id: string; typeName: string }[];
+  changedNodes: { id: string; typeName: string; type: string }[];
 }> {
   return prisma.$transaction(async () => {
     const { currentSnapshot } = await prisma.canvas.findFirstOrThrow({
@@ -41,10 +41,15 @@ export async function updateSnapshot({
         isFinite(+str),
       );
 
-    console.error(changedNodeIndexes);
-    const changedNodes = changedNodeIndexes.map((idx) =>
-      pick(snapshot.documents[+idx].state, ["id", "typeName"]),
-    );
+    const changedNodes = changedNodeIndexes.map((idx) => {
+      const state = snapshot.documents[+idx].state;
+      return {
+        id: state.id,
+        typeName: state.typeName,
+        // @ts-ignore
+        type: state.type,
+      } as const;
+    });
 
     const snap = {
       canvasId: id,

@@ -103,16 +103,20 @@ model Snapshot {
 model CodeNode {
   // tl draw id
   id               String   @id
-  inputCodeHash    String
-  compiledCodeHash String
   canvasId         String
-  codeName         String
-  inputCode        String
-  compiledCode     String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now())
-  dependencies     String[]
+  summary          String?
+  createdAt DateTime @default(now())
+}
+
+model SourceCodeSummary {
+  id               String   @id
+  canvasId         String
+  nodeId           String
   clock            Int
+  createdAt        DateTime @default(now())
+  title            String
+  summary          String
+  reasoning        String
 }
 
 enum EventStatus {

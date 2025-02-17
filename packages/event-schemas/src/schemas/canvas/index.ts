@@ -1,6 +1,6 @@
 import snapshot, { type CanvasSnapshot } from "./snapshot";
 import create, { type CanvasCreate } from "./create";
-import node, { type CanvasNodeEvent } from "./node";
+import nodeChange, { type CanvasNodeChange } from "./node-change";
 
-export default [snapshot, create, node];
-export type CanvasEvent = CanvasSnapshot | CanvasCreate | CanvasNodeEvent;
+export default [snapshot, create, nodeChange];
+export type CanvasEvent = CanvasSnapshot | CanvasCreate | CanvasNodeChange;

@@ -20,7 +20,7 @@ primary_region = "ord"
 [mounts]
     source = "models"
     destination = "/root/.ollama"
-    initial_size = "10gb"
+    initial_size = "120gb"
 
 [vm]
   gpu_kind = "a10"
