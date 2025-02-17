@@ -1,0 +1,28 @@
+{
+  "name": "prompt-def",
+  "module": "./dist/index.ts",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf ./dist && bun build ./src/index.ts --outdir ./dist --target node && tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "bun run ./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3",
+    "zod": "^3.24.2"
+  }
+}
